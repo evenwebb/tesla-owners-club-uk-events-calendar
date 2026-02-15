@@ -291,14 +291,6 @@
       padding: 1.25rem;
       text-align: center;
     }
-    .stat-card-wide {
-      grid-column: span 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      text-align: left;
-    }
     .stat-number {
       font-size: 2.5rem;
       font-weight: 700;
@@ -307,18 +299,6 @@
       margin-bottom: 0.5rem;
     }
     .stat-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .stat-icon { font-size: 2.5rem; }
-    .stat-venue {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .stat-venue-label {
       font-size: 0.85rem;
       color: var(--text-muted);
       text-transform: uppercase;
@@ -411,28 +391,28 @@
     }
     @media (max-width: 640px) {
       .stats-dashboard { grid-template-columns: 1fr 1fr; }
-      .stat-card-wide { grid-column: span 2; }
       .quick-add-buttons { flex-direction: column; }
       .btn { width: 100%; }
     }
     .health-status {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: none;
       border-radius: var(--radius-sm);
-      padding: 1rem;
-      margin: 1.5rem 0;
+      padding: 0.5rem 0;
+      margin: 0.75rem 0;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      font-size: 0.9rem;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.6;
     }
-    .health-status.success { border-color: rgba(34, 197, 94, 0.4); }
-    .health-status.warning { border-color: rgba(251, 191, 36, 0.4); }
-    .health-status.error { border-color: rgba(239, 68, 68, 0.4); }
-    .health-icon { font-size: 1.5rem; }
+    .health-status.success { opacity: 0.6; }
+    .health-status.warning { opacity: 0.7; }
+    .health-status.error { opacity: 0.8; }
+    .health-icon { font-size: 0.9rem; }
     .health-info { flex: 1; }
-    .health-main { font-weight: 500; }
-    .health-message { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .health-main { font-weight: 400; }
+    .health-message { font-size: 0.75rem; color: var(--text-muted); margin-top: 0; }
     .health-error { font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }
     .howto-section { margin: 3rem 0; }
     .howto-section h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
@@ -587,7 +567,7 @@
         "addressLocality": "Austin"
       }
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png",
     "url": "https://teslaowners.org.uk/events/giga-texas-2026"
   },
   {
@@ -608,7 +588,7 @@
       "@type": "VirtualLocation",
       "url": "https://teslaowners.org.uk"
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png",
     "url": "https://teslaowners.org.uk/events/annual-general-meeting"
   },
   {
@@ -633,7 +613,7 @@
         "addressLocality": "Yorkshire Event Centre"
       }
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg",
     "url": "https://teslaowners.org.uk/events/fully-charged-south-2025-copy"
   },
   {
@@ -658,7 +638,7 @@
         "addressLocality": "Hardwick Hall"
       }
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png",
     "url": "https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026"
   },
   {
@@ -683,7 +663,7 @@
         "addressLocality": "Flachau / Salzburg"
       }
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg",
     "url": "https://teslaowners.org.uk/events/tesla-takeover-europe-26"
   },
   {
@@ -708,7 +688,7 @@
         "addressLocality": "Cheltenham Racecourse"
       }
     },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg",
+    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg",
     "url": "https://teslaowners.org.uk/events/everything-electric-west"
   },
   {
@@ -750,7 +730,7 @@
     <div class="health-status success">
       <div class="health-icon">✅</div>
       <div class="health-info">
-        <div class="health-main">Last updated: 0 minutes ago</div>
+        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="2026-02-15T13:09:19.752861+00:00">0 minutes ago</span></div>
         <div class="health-message">Successfully processed 9 events (7 upcoming)</div>
         
       </div>
@@ -762,19 +742,12 @@
         <div class="stat-label">Upcoming Events</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">29</div>
+        <div class="stat-number" id="daysUntilNext" data-next-event-date="2026-03-16T11:30:00-06:00">29</div>
         <div class="stat-label">Days Until Next Event</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">2.1</div>
-        <div class="stat-label">Events Per Month</div>
-      </div>
-      <div class="stat-card stat-card-wide">
-        <div class="stat-icon">📍</div>
-        <div class="stat-info">
-          <div class="stat-venue">Austin</div>
-          <div class="stat-venue-label">Popular Venue</div>
-        </div>
+        <div class="stat-number">2</div>
+        <div class="stat-label">Past Events</div>
       </div>
     </section>
 
@@ -829,15 +802,15 @@
     <section class="featured-section">
       <h2>Upcoming events <span id="eventCount"></span></h2>
       <div class="featured-grid" id="eventGrid">
-        <div class="featured-event international" data-event-idx="0" data-category="international" data-region="international" onclick="showEventModal(0)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png')"></div><div class="event-content"><span class="date">16 Mar 2026</span><span class="category-badge international">🌍 International</span><span class="title">Giga Texas 2026</span><span class="location-small">📍 Austin, Texas</span><span class="status-badge">❌ Sold out</span></div></div>
-        <div class="featured-event agm" data-event-idx="1" data-category="agm" data-region="online" onclick="showEventModal(1)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png')"></div><div class="event-content"><span class="date">28 Mar 2026</span><span class="category-badge agm">📋 AGM</span><span class="title">Annual General Meeting</span><span class="location-small">📍 Online</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="2" data-category="exhibition" data-region="north" onclick="showEventModal(2)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg')"></div><div class="event-content"><span class="date">08 May 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric - North</span><span class="location-small">📍 Yorkshire Event Centre</span></div></div>
-        <div class="featured-event meetup" data-event-idx="3" data-category="meetup" data-region="north" onclick="showEventModal(3)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png')"></div><div class="event-content"><span class="date">31 May 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Owners at Smiles for Miles 2026</span><span class="location-small">📍 Hardwick Hall, Sedgfield</span></div></div>
-        <div class="featured-event meetup" data-event-idx="4" data-category="meetup" data-region="international" onclick="showEventModal(4)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg')"></div><div class="event-content"><span class="date">05 Jun 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Takeover Europe '26</span><span class="location-small">📍 Flachau / Salzburg</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="5" data-category="exhibition" data-region="midlands" onclick="showEventModal(5)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg')"></div><div class="event-content"><span class="date">12 Jun 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric West</span><span class="location-small">📍 Cheltenham Racecourse</span></div></div>
+        <div class="featured-event international" data-event-idx="0" data-category="international" data-region="international" onclick="showEventModal(0)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png')"></div><div class="event-content"><span class="date">16 Mar 2026</span><span class="category-badge international">🌍 International</span><span class="title">Giga Texas 2026</span><span class="location-small">📍 Austin, Texas</span><span class="status-badge">❌ Sold out</span></div></div>
+        <div class="featured-event agm" data-event-idx="1" data-category="agm" data-region="online" onclick="showEventModal(1)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png')"></div><div class="event-content"><span class="date">28 Mar 2026</span><span class="category-badge agm">📋 AGM</span><span class="title">Annual General Meeting</span><span class="location-small">📍 Online</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="2" data-category="exhibition" data-region="north" onclick="showEventModal(2)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg')"></div><div class="event-content"><span class="date">08 May 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric - North</span><span class="location-small">📍 Yorkshire Event Centre</span></div></div>
+        <div class="featured-event meetup" data-event-idx="3" data-category="meetup" data-region="north" onclick="showEventModal(3)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png')"></div><div class="event-content"><span class="date">31 May 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Owners at Smiles for Miles 2026</span><span class="location-small">📍 Hardwick Hall, Sedgfield</span></div></div>
+        <div class="featured-event meetup" data-event-idx="4" data-category="meetup" data-region="international" onclick="showEventModal(4)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg')"></div><div class="event-content"><span class="date">05 Jun 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Takeover Europe '26</span><span class="location-small">📍 Flachau / Salzburg</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="5" data-category="exhibition" data-region="midlands" onclick="showEventModal(5)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg')"></div><div class="event-content"><span class="date">12 Jun 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric West</span><span class="location-small">📍 Cheltenham Racecourse</span></div></div>
         <div class="featured-event exhibition" data-event-idx="6" data-category="exhibition" data-region="south" onclick="showEventModal(6)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/')"></div><div class="event-content"><span class="date">27 Jun 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Supercharged 2026</span><span class="location-small">📍 Somewhere between London and B...</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="7" data-category="exhibition" data-region="south" onclick="showEventModal(7)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg')"></div><div class="event-content"><span class="date">03 Sep 2021</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Tesla Owners UK @ Fully Charged Live - Show Cars</span><span class="location-small">📍 Farnborough International</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="8" data-category="exhibition" data-region="south" onclick="showEventModal(8)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg')"></div><div class="event-content"><span class="date">03 Sep 2021</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">TEST - Fully Charged Live Outside</span><span class="location-small">📍 Farnborough International</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="7" data-category="exhibition" data-region="south" onclick="showEventModal(7)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg')"></div><div class="event-content"><span class="date">03 Sep 2021</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Tesla Owners UK @ Fully Charged Live - Show Cars</span><span class="location-small">📍 Farnborough International</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="8" data-category="exhibition" data-region="south" onclick="showEventModal(8)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg')"></div><div class="event-content"><span class="date">03 Sep 2021</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">TEST - Fully Charged Live Outside</span><span class="location-small">📍 Farnborough International</span></div></div>
       </div>
     </section>
 
@@ -919,7 +892,6 @@
       <div class="referral-cta">
         <p class="referral-title">🚗 Ordering a Tesla?</p>
         <p class="referral-text">Use my referral link and get <strong>650 free Supercharging miles</strong> or <strong>£500 off</strong> your new Tesla!</p>
-        <p class="referral-note">(First 10 people — benefits vary by product)</p>
         <a href="https://ts.la/steven201536" target="_blank" rel="noopener" class="referral-link">Claim Your Tesla Benefits →</a>
       </div>
 
@@ -952,7 +924,7 @@
 
   <script>
   // Event data
-  const eventsData = [{"title": "Giga Texas 2026", "date": "16 Mar 2026", "time": "11:30", "location": "Austin, Texas", "description": "A very special opportunity for our Supporter Members of Tesla Owners UK. We have a limited number of tickets for a unique opportunity to see the Tesla Giga Factory in Austin Texas. The visit is in **M", "url": "https://teslaowners.org.uk/events/giga-texas-2026", "upcoming": true, "category": "international", "region": "international", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png"}, {"title": "Annual General Meeting", "date": "28 Mar 2026", "time": "10:30", "location": "Online", "description": "The 2026 AGM for Tesla Owners UK will be online. Details will be issued to all paid up supporters prior to the meeting.", "url": "https://teslaowners.org.uk/events/annual-general-meeting", "upcoming": true, "category": "agm", "region": "online", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png"}, {"title": "Everything Electric - North", "date": "08 May 2026", "time": "10:00", "location": "Yorkshire Event Centre", "description": "Everything Electric North is at the Yorkshire Event Centre on 8 and 9 May 2026 for a fun-filled festival of electrification. We don't know what our club presence is going to be as yet, but if you woul", "url": "https://teslaowners.org.uk/events/fully-charged-south-2025-copy", "upcoming": true, "category": "exhibition", "region": "north", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg"}, {"title": "Tesla Owners at Smiles for Miles 2026", "date": "31 May 2026", "time": "10:00", "location": "Hardwick Hall, Sedgfield", "description": "Join fellow Tesla Owners for a fun day out with this regional event at Hardwick Hall and have an action-packed day of Inclusive automotive excitement while raising funds for **JPC Community Hub CIC**,", "url": "https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026", "upcoming": true, "category": "meetup", "region": "north", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png"}, {"title": "Tesla Takeover Europe '26", "date": "05 Jun 2026", "time": "00:00", "location": "Flachau / Salzburg", "description": "Our friends at Tesla Owners Austria are hosting the Tesla Take Over Europe '26 in Flachau. Tesla Owners UK will be in attendance and welcome members to make a road trip of it to take part in a wide ra", "url": "https://teslaowners.org.uk/events/tesla-takeover-europe-26", "upcoming": true, "category": "meetup", "region": "international", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg"}, {"title": "Everything Electric West", "date": "12 Jun 2026", "time": "00:00", "location": "Cheltenham Racecourse", "description": "Everything Electric is coming to Cheltenham for the first time in 2026. We will update this save the date when we know what form our TOUK presence will be.", "url": "https://teslaowners.org.uk/events/everything-electric-west", "upcoming": true, "category": "exhibition", "region": "midlands", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg"}, {"title": "Supercharged 2026", "date": "27 Jun 2026", "time": "10:00", "location": "Somewhere between London and Birmingham ", "description": "The 2026 edition of the Tesla Owners UK national member event will be bigger and better, with more driving opportunities and a new location to enjoy. Details will be announced in early 2026. Entry to ", "url": "https://teslaowners.org.uk/events/supercharged-2026", "upcoming": true, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/"}, {"title": "Tesla Owners UK @ Fully Charged Live - Show Cars", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Show your car with Tesla Owners UK.", "url": "https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars", "upcoming": false, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg"}, {"title": "TEST - Fully Charged Live Outside", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Fully Charged Live Outside", "url": "https://teslaowners.org.uk/events/test-fully-charged-live", "upcoming": false, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg"}];
+  const eventsData = [{"title": "Giga Texas 2026", "date": "16 Mar 2026", "time": "11:30", "location": "Austin, Texas", "description": "A very special opportunity for our Supporter Members of Tesla Owners UK. We have a limited number of tickets for a unique opportunity to see the Tesla Giga Factory in Austin Texas. The visit is in **M", "url": "https://teslaowners.org.uk/events/giga-texas-2026", "upcoming": true, "category": "international", "region": "international", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png"}, {"title": "Annual General Meeting", "date": "28 Mar 2026", "time": "10:30", "location": "Online", "description": "The 2026 AGM for Tesla Owners UK will be online. Details will be issued to all paid up supporters prior to the meeting.", "url": "https://teslaowners.org.uk/events/annual-general-meeting", "upcoming": true, "category": "agm", "region": "online", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png"}, {"title": "Everything Electric - North", "date": "08 May 2026", "time": "10:00", "location": "Yorkshire Event Centre", "description": "Everything Electric North is at the Yorkshire Event Centre on 8 and 9 May 2026 for a fun-filled festival of electrification. We don't know what our club presence is going to be as yet, but if you woul", "url": "https://teslaowners.org.uk/events/fully-charged-south-2025-copy", "upcoming": true, "category": "exhibition", "region": "north", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg"}, {"title": "Tesla Owners at Smiles for Miles 2026", "date": "31 May 2026", "time": "10:00", "location": "Hardwick Hall, Sedgfield", "description": "Join fellow Tesla Owners for a fun day out with this regional event at Hardwick Hall and have an action-packed day of Inclusive automotive excitement while raising funds for **JPC Community Hub CIC**,", "url": "https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026", "upcoming": true, "category": "meetup", "region": "north", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png"}, {"title": "Tesla Takeover Europe '26", "date": "05 Jun 2026", "time": "00:00", "location": "Flachau / Salzburg", "description": "Our friends at Tesla Owners Austria are hosting the Tesla Take Over Europe '26 in Flachau. Tesla Owners UK will be in attendance and welcome members to make a road trip of it to take part in a wide ra", "url": "https://teslaowners.org.uk/events/tesla-takeover-europe-26", "upcoming": true, "category": "meetup", "region": "international", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg"}, {"title": "Everything Electric West", "date": "12 Jun 2026", "time": "00:00", "location": "Cheltenham Racecourse", "description": "Everything Electric is coming to Cheltenham for the first time in 2026. We will update this save the date when we know what form our TOUK presence will be.", "url": "https://teslaowners.org.uk/events/everything-electric-west", "upcoming": true, "category": "exhibition", "region": "midlands", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg"}, {"title": "Supercharged 2026", "date": "27 Jun 2026", "time": "10:00", "location": "Somewhere between London and Birmingham ", "description": "The 2026 edition of the Tesla Owners UK national member event will be bigger and better, with more driving opportunities and a new location to enjoy. Details will be announced in early 2026. Entry to ", "url": "https://teslaowners.org.uk/events/supercharged-2026", "upcoming": true, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/"}, {"title": "Tesla Owners UK @ Fully Charged Live - Show Cars", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Show your car with Tesla Owners UK.", "url": "https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars", "upcoming": false, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg"}, {"title": "TEST - Fully Charged Live Outside", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Fully Charged Live Outside", "url": "https://teslaowners.org.uk/events/test-fully-charged-live", "upcoming": false, "category": "exhibition", "region": "south", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg"}];
 
   // Dark mode toggle
   function toggleTheme() {
@@ -968,6 +940,63 @@
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
   })();
+
+  // Update "Days Until Next Event" dynamically
+  function updateDaysUntil() {
+    const element = document.getElementById('daysUntilNext');
+    if (!element) return;
+
+    const nextEventDate = element.getAttribute('data-next-event-date');
+    if (!nextEventDate) return;
+
+    const eventDate = new Date(nextEventDate);
+    const now = new Date();
+    const diffTime = eventDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0) {
+      element.textContent = diffDays;
+    } else {
+      element.textContent = '—';
+    }
+  }
+
+  // Update countdown on page load and daily
+  updateDaysUntil();
+  setInterval(updateDaysUntil, 1000 * 60 * 60); // Update every hour
+
+  // Update "Last updated" timestamp dynamically
+  function updateHealthTimestamp() {
+    const element = document.getElementById('healthTimestamp');
+    if (!element) return;
+
+    const timestamp = element.getAttribute('data-timestamp');
+    if (!timestamp) return;
+
+    const updateTime = new Date(timestamp);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - updateTime) / 1000);
+
+    let timeAgo;
+    if (diffSeconds < 60) {
+      timeAgo = 'just now';
+    } else if (diffSeconds < 3600) {
+      const mins = Math.floor(diffSeconds / 60);
+      timeAgo = `${mins} minute${mins > 1 ? 's' : ''} ago`;
+    } else if (diffSeconds < 86400) {
+      const hours = Math.floor(diffSeconds / 3600);
+      timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffSeconds / 86400);
+      timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    element.textContent = timeAgo;
+  }
+
+  // Update health timestamp on page load and every minute
+  updateHealthTimestamp();
+  setInterval(updateHealthTimestamp, 1000 * 60); // Update every minute
 
   // Filter state
   let activeCategory = 'all';

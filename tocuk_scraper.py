@@ -391,6 +391,30 @@ def fetch_event_detail(slug: str, cache: Dict[str, dict]) -> Optional[Dict[str, 
     return None
 
 
+def fix_banner_url(url: str) -> str:
+    """Fix malformed banner URLs with duplicate paths.
+
+    Tesla Owners UK API sometimes returns URLs like:
+    https://cdn.com/path/https://cdn.com/path/image.png
+
+    This function extracts the correct URL.
+    """
+    if not url or not url.startswith("http"):
+        return url
+
+    # Check if URL contains duplicate https://
+    if url.count("https://") > 1 or url.count("http://") > 1:
+        # Extract the last complete URL
+        parts = url.split("https://")
+        if len(parts) > 2:
+            return "https://" + parts[-1]
+        parts = url.split("http://")
+        if len(parts) > 2:
+            return "http://" + parts[-1]
+
+    return url
+
+
 def merge_event_detail(
     list_event: Dict[str, Any], detail_event: Optional[Dict[str, Any]]
 ) -> Dict[str, Any]:
@@ -426,7 +450,7 @@ def merge_event_detail(
     if detail_event.get("date_or_range"):
         merged["date_or_range"] = detail_event["date_or_range"]
     if detail_event.get("banner_url"):
-        merged["banner_url"] = detail_event["banner_url"]
+        merged["banner_url"] = fix_banner_url(detail_event["banner_url"])
     if detail_event.get("email_address"):
         merged["email_address"] = detail_event["email_address"]
     if detail_event.get("reply_to_email"):
@@ -970,7 +994,7 @@ def build_index_html(
     <div class="health-status {status_class}">
       <div class="health-icon">{status_emoji}</div>
       <div class="health-info">
-        <div class="health-main">Last updated: {time_ago}</div>
+        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="{last_update}">{time_ago}</span></div>
         <div class="health-message">{message}</div>
         {f'<div class="health-error">Error: {error}</div>' if error else ''}
       </div>
@@ -998,8 +1022,7 @@ def build_index_html(
             "total": len(upcoming_first),
             "next_event": None,
             "days_until": None,
-            "popular_venue": None,
-            "avg_per_month": 0
+            "past_events": len(past)
         }
 
         if upcoming_first:
@@ -1010,23 +1033,7 @@ def build_index_html(
             if next_date:
                 days_until = (next_date.replace(tzinfo=datetime.timezone.utc) if next_date.tzinfo is None else next_date) - today
                 stats["days_until"] = max(0, days_until.days)
-
-            # Most popular venue
-            venues = {}
-            for e in upcoming_first:
-                loc = e.get("location", "").split(",")[0].strip()
-                if loc:
-                    venues[loc] = venues.get(loc, 0) + 1
-            if venues:
-                stats["popular_venue"] = max(venues.items(), key=lambda x: x[1])[0]
-
-            # Average events per month (last 6 months of upcoming)
-            if len(upcoming_first) >= 2:
-                first_date = parse_iso_datetime(upcoming_first[0].get("start_at"))
-                last_date = parse_iso_datetime(upcoming_first[-1].get("start_at"))
-                if first_date and last_date:
-                    months = max(1, (last_date - first_date).days / 30.44)
-                    stats["avg_per_month"] = len(upcoming_first) / months
+                stats["next_event_date"] = next_date.isoformat()
 
         # Build event cards with full data for search/filter
         featured_items = []
@@ -1389,14 +1396,6 @@ def build_index_html(
       padding: 1.25rem;
       text-align: center;
     }}
-    .stat-card-wide {{
-      grid-column: span 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      text-align: left;
-    }}
     .stat-number {{
       font-size: 2.5rem;
       font-weight: 700;
@@ -1405,18 +1404,6 @@ def build_index_html(
       margin-bottom: 0.5rem;
     }}
     .stat-label {{
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }}
-    .stat-icon {{ font-size: 2.5rem; }}
-    .stat-venue {{
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text);
-    }}
-    .stat-venue-label {{
       font-size: 0.85rem;
       color: var(--text-muted);
       text-transform: uppercase;
@@ -1509,28 +1496,28 @@ def build_index_html(
     }}
     @media (max-width: 640px) {{
       .stats-dashboard {{ grid-template-columns: 1fr 1fr; }}
-      .stat-card-wide {{ grid-column: span 2; }}
       .quick-add-buttons {{ flex-direction: column; }}
       .btn {{ width: 100%; }}
     }}
     .health-status {{
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: none;
       border-radius: var(--radius-sm);
-      padding: 1rem;
-      margin: 1.5rem 0;
+      padding: 0.5rem 0;
+      margin: 0.75rem 0;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      font-size: 0.9rem;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.6;
     }}
-    .health-status.success {{ border-color: rgba(34, 197, 94, 0.4); }}
-    .health-status.warning {{ border-color: rgba(251, 191, 36, 0.4); }}
-    .health-status.error {{ border-color: rgba(239, 68, 68, 0.4); }}
-    .health-icon {{ font-size: 1.5rem; }}
+    .health-status.success {{ opacity: 0.6; }}
+    .health-status.warning {{ opacity: 0.7; }}
+    .health-status.error {{ opacity: 0.8; }}
+    .health-icon {{ font-size: 0.9rem; }}
     .health-info {{ flex: 1; }}
-    .health-main {{ font-weight: 500; }}
-    .health-message {{ font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }}
+    .health-main {{ font-weight: 400; }}
+    .health-message {{ font-size: 0.75rem; color: var(--text-muted); margin-top: 0; }}
     .health-error {{ font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }}
     .howto-section {{ margin: 3rem 0; }}
     .howto-section h2 {{ font-size: 1.25rem; margin-bottom: 0.5rem; }}
@@ -1678,19 +1665,12 @@ def build_index_html(
         <div class="stat-label">Upcoming Events</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">{stats['days_until'] if stats['days_until'] is not None else '—'}</div>
+        <div class="stat-number" id="daysUntilNext" data-next-event-date="{stats.get('next_event_date', '')}">{stats['days_until'] if stats['days_until'] is not None else '—'}</div>
         <div class="stat-label">Days Until Next Event</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">{f"{stats['avg_per_month']:.1f}" if stats['avg_per_month'] > 0 else '—'}</div>
-        <div class="stat-label">Events Per Month</div>
-      </div>
-      <div class="stat-card stat-card-wide">
-        <div class="stat-icon">📍</div>
-        <div class="stat-info">
-          <div class="stat-venue">{stats['popular_venue'] if stats['popular_venue'] else 'Various Venues'}</div>
-          <div class="stat-venue-label">Popular Venue</div>
-        </div>
+        <div class="stat-number">{stats['past_events']}</div>
+        <div class="stat-label">Past Events</div>
       </div>
     </section>
 
@@ -1827,7 +1807,6 @@ def build_index_html(
       <div class="referral-cta">
         <p class="referral-title">🚗 Ordering a Tesla?</p>
         <p class="referral-text">Use my referral link and get <strong>650 free Supercharging miles</strong> or <strong>£500 off</strong> your new Tesla!</p>
-        <p class="referral-note">(First 10 people — benefits vary by product)</p>
         <a href="https://ts.la/steven201536" target="_blank" rel="noopener" class="referral-link">Claim Your Tesla Benefits →</a>
       </div>
 
@@ -1876,6 +1855,63 @@ def build_index_html(
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
   }})();
+
+  // Update "Days Until Next Event" dynamically
+  function updateDaysUntil() {{
+    const element = document.getElementById('daysUntilNext');
+    if (!element) return;
+
+    const nextEventDate = element.getAttribute('data-next-event-date');
+    if (!nextEventDate) return;
+
+    const eventDate = new Date(nextEventDate);
+    const now = new Date();
+    const diffTime = eventDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0) {{
+      element.textContent = diffDays;
+    }} else {{
+      element.textContent = '—';
+    }}
+  }}
+
+  // Update countdown on page load and daily
+  updateDaysUntil();
+  setInterval(updateDaysUntil, 1000 * 60 * 60); // Update every hour
+
+  // Update "Last updated" timestamp dynamically
+  function updateHealthTimestamp() {{
+    const element = document.getElementById('healthTimestamp');
+    if (!element) return;
+
+    const timestamp = element.getAttribute('data-timestamp');
+    if (!timestamp) return;
+
+    const updateTime = new Date(timestamp);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - updateTime) / 1000);
+
+    let timeAgo;
+    if (diffSeconds < 60) {{
+      timeAgo = 'just now';
+    }} else if (diffSeconds < 3600) {{
+      const mins = Math.floor(diffSeconds / 60);
+      timeAgo = `${{mins}} minute${{mins > 1 ? 's' : ''}} ago`;
+    }} else if (diffSeconds < 86400) {{
+      const hours = Math.floor(diffSeconds / 3600);
+      timeAgo = `${{hours}} hour${{hours > 1 ? 's' : ''}} ago`;
+    }} else {{
+      const days = Math.floor(diffSeconds / 86400);
+      timeAgo = `${{days}} day${{days > 1 ? 's' : ''}} ago`;
+    }}
+
+    element.textContent = timeAgo;
+  }}
+
+  // Update health timestamp on page load and every minute
+  updateHealthTimestamp();
+  setInterval(updateHealthTimestamp, 1000 * 60); // Update every minute
 
   // Filter state
   let activeCategory = 'all';
