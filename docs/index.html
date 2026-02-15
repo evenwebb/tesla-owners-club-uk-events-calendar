@@ -22,6 +22,15 @@
       --radius: 16px;
       --radius-sm: 10px;
     }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --surface-2: #e9ecef;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-muted: #6c757d;
+      --accent-dim: rgba(0,212,255,0.1);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Space Grotesk', system-ui, sans-serif;
@@ -30,8 +39,94 @@
       line-height: 1.6;
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
     }
     .page { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .search-box::placeholder { color: var(--text-muted); }
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .theme-toggle:hover { transform: scale(1.05); }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-title { font-size: 1.5rem; margin-bottom: 1rem; padding-right: 2rem; }
+    .modal-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .modal-meta strong { color: var(--accent); }
+    .modal-description { line-height: 1.7; margin-bottom: 1.5rem; }
+    .modal-link {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+    .modal-link:hover { opacity: 0.9; }
     .hero {
       text-align: center;
       padding: 3rem 0 2rem;
@@ -96,17 +191,137 @@
       border-radius: var(--radius-sm);
       padding: 1rem;
       font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .featured-event:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
     }
     .featured-event .date {
       font-size: 0.75rem;
       color: var(--accent);
       font-weight: 600;
-      margin-bottom: 0.5rem;
       display: block;
     }
+    .featured-event .title {
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .featured-event .location-small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+    .featured-event .status-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: inline-block;
+      margin-top: 0.25rem;
+      width: fit-content;
+    }
+    .featured-event.hidden { display: none; }
+    .health-status {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin: 1.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
+    .health-status.success { border-color: rgba(34, 197, 94, 0.4); }
+    .health-status.warning { border-color: rgba(251, 191, 36, 0.4); }
+    .health-status.error { border-color: rgba(239, 68, 68, 0.4); }
+    .health-icon { font-size: 1.5rem; }
+    .health-info { flex: 1; }
+    .health-main { font-weight: 500; }
+    .health-message { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .health-error { font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }
     .howto-section { margin: 3rem 0; }
-    .howto-section h2 { font-size: 1.25rem; margin-bottom: 1rem; }
-    .howto-section p { color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.95rem; }
+    .howto-section h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .howto-intro { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .howto-footer {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .accordion-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .accordion-button {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .accordion-button:hover {
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }
+    .accordion-button[aria-expanded="true"] {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-color: transparent;
+    }
+    .accordion-icon { font-size: 1.25rem; }
+    .accordion-title { flex: 1; }
+    .accordion-chevron {
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+    .accordion-button[aria-expanded="true"] .accordion-chevron {
+      transform: rotate(180deg);
+    }
+    .accordion-content {
+      display: none;
+      padding: 1.5rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: var(--radius-sm);
+      border-bottom-right-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+    }
+    .accordion-content.active { display: block; }
+    .instructions-list {
+      margin: 0.75rem 0;
+      padding-left: 1.5rem;
+      line-height: 1.8;
+    }
+    .instructions-list li { margin-bottom: 0.5rem; }
+    .instructions-list strong { color: var(--accent); }
+    .instructions-list a { color: var(--cyan); text-decoration: none; }
+    .instructions-list a:hover { text-decoration: underline; }
+    .note {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-2);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
     footer {
       text-align: center;
       padding: 2rem;
@@ -122,57 +337,266 @@
 <body>
   <div class="page">
     <header class="hero">
-      <div class="badge">Tesla Owners UK · Live</div>
-      <h1>Events Calendar</h1>
-      <p class="tagline">Subscribe to Tesla Owners UK events. Track days, meetups, AGMs and more.</p>
+      <div class="badge">Tesla Owners UK · Live Calendar</div>
+      <h1>Tesla Owners UK Events</h1>
+      <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 
+    <div class="health-status success">
+      <div class="health-icon">✅</div>
+      <div class="health-info">
+        <div class="health-main">Last updated: 0 minutes ago</div>
+        <div class="health-message">Successfully processed 9 events (7 upcoming)</div>
+        
+      </div>
+    </div>
     <section class="card">
       <h2>Subscribe to the calendar</h2>
       <p class="meta">7 upcoming events</p>
       <a href="tocuk.ics" class="btn">Subscribe to calendar</a>
     </section>
 
+    <div class="controls">
+      <input type="text" class="search-box" id="searchBox" placeholder="Search events by title or location..." onkeyup="filterEvents()">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌓</button>
+    </div>
+
     <section class="featured-section">
-      <h2>Upcoming events</h2>
-      <div class="featured-grid">
-        <div class="featured-event"><span class="date">16 Mar 2026</span>Giga Texas 2026</div>
-        <div class="featured-event"><span class="date">28 Mar 2026</span>Annual General Meeting</div>
-        <div class="featured-event"><span class="date">08 May 2026</span>Everything Electric - North</div>
-        <div class="featured-event"><span class="date">31 May 2026</span>Tesla Owners at Smiles for Miles 2026</div>
-        <div class="featured-event"><span class="date">05 Jun 2026</span>Tesla Takeover Europe '26</div>
-        <div class="featured-event"><span class="date">12 Jun 2026</span>Everything Electric West</div>
-        <div class="featured-event"><span class="date">27 Jun 2026</span>Supercharged 2026</div>
-        <div class="featured-event"><span class="date">03 Sep 2021</span>Tesla Owners UK @ Fully Charged Live - Show Cars</div>
+      <h2>Upcoming events <span id="eventCount"></span></h2>
+      <div class="featured-grid" id="eventGrid">
+        <div class="featured-event" data-event-idx="0" onclick="showEventModal(0)"><span class="date">16 Mar 2026</span><span class="title">Giga Texas 2026</span><span class="location-small">Austin, Texas</span><span class="status-badge">❌ Sold out</span></div>
+        <div class="featured-event" data-event-idx="1" onclick="showEventModal(1)"><span class="date">28 Mar 2026</span><span class="title">Annual General Meeting</span><span class="location-small">Online</span></div>
+        <div class="featured-event" data-event-idx="2" onclick="showEventModal(2)"><span class="date">08 May 2026</span><span class="title">Everything Electric - North</span><span class="location-small">Yorkshire Event Centre</span></div>
+        <div class="featured-event" data-event-idx="3" onclick="showEventModal(3)"><span class="date">31 May 2026</span><span class="title">Tesla Owners at Smiles for Miles 2026</span><span class="location-small">Hardwick Hall, Sedgfield</span></div>
+        <div class="featured-event" data-event-idx="4" onclick="showEventModal(4)"><span class="date">05 Jun 2026</span><span class="title">Tesla Takeover Europe '26</span><span class="location-small">Flachau / Salzburg</span></div>
+        <div class="featured-event" data-event-idx="5" onclick="showEventModal(5)"><span class="date">12 Jun 2026</span><span class="title">Everything Electric West</span><span class="location-small">Cheltenham Racecourse</span></div>
+        <div class="featured-event" data-event-idx="6" onclick="showEventModal(6)"><span class="date">27 Jun 2026</span><span class="title">Supercharged 2026</span><span class="location-small">Somewhere between London and B...</span></div>
+        <div class="featured-event" data-event-idx="7" onclick="showEventModal(7)"><span class="date">03 Sep 2021</span><span class="title">Tesla Owners UK @ Fully Charged Live - Show Cars</span><span class="location-small">Farnborough International</span></div>
+        <div class="featured-event" data-event-idx="8" onclick="showEventModal(8)"><span class="date">03 Sep 2021</span><span class="title">TEST - Fully Charged Live Outside</span><span class="location-small">Farnborough International</span></div>
       </div>
     </section>
 
     <section class="howto-section">
-      <h2>How to use</h2>
-      <p><strong>Google Calendar:</strong> Add other calendars → From URL → paste the calendar link.</p>
-      <p><strong>Apple Calendar:</strong> File → New Calendar Subscription → paste the URL.</p>
-      <p><strong>Outlook:</strong> Add calendar → Subscribe from web → paste the URL.</p>
+      <h2>How to subscribe</h2>
+      <p class="howto-intro">Choose your calendar app to see instructions:</p>
+
+      <div class="accordion-group">
+        <button class="accordion-button" onclick="toggleAccordion('google')" aria-expanded="false">
+          <span class="accordion-icon">📅</span>
+          <span class="accordion-title">Google Calendar</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-google">
+          <ol class="instructions-list">
+            <li>Copy the calendar URL above (click the "Subscribe to calendar" button)</li>
+            <li>Open <a href="https://calendar.google.com" target="_blank" rel="noopener">Google Calendar</a></li>
+            <li>On the left sidebar, click the <strong>+</strong> next to "Other calendars"</li>
+            <li>Select <strong>"From URL"</strong></li>
+            <li>Paste the calendar URL and click <strong>Add calendar</strong></li>
+          </ol>
+          <p class="note">💡 Tip: On Android, the subscribe button will open Google Calendar automatically</p>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('apple')" aria-expanded="false">
+          <span class="accordion-icon">🍎</span>
+          <span class="accordion-title">Apple Calendar (iPhone/iPad/Mac)</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-apple">
+          <ol class="instructions-list">
+            <li>On iPhone/iPad, tap the "Subscribe to calendar" button above</li>
+            <li>Your device will automatically open Calendar and prompt to subscribe</li>
+            <li>Tap <strong>Subscribe</strong> to add the calendar</li>
+          </ol>
+          <p class="note"><strong>On Mac:</strong></p>
+          <ol class="instructions-list">
+            <li>Click the "Subscribe to calendar" button (it will use webcal:// protocol)</li>
+            <li>Or manually: File → New Calendar Subscription → paste the URL</li>
+          </ol>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('outlook')" aria-expanded="false">
+          <span class="accordion-icon">📧</span>
+          <span class="accordion-title">Outlook</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-outlook">
+          <ol class="instructions-list">
+            <li>Copy the calendar URL above</li>
+            <li>Open <a href="https://outlook.live.com/calendar" target="_blank" rel="noopener">Outlook Calendar</a></li>
+            <li>Click <strong>Add calendar</strong></li>
+            <li>Select <strong>"Subscribe from web"</strong></li>
+            <li>Paste the calendar URL and click <strong>Import</strong></li>
+          </ol>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('other')" aria-expanded="false">
+          <span class="accordion-icon">🗓️</span>
+          <span class="accordion-title">Other Calendar Apps</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-other">
+          <p>Most calendar applications support iCalendar (.ics) subscriptions:</p>
+          <ol class="instructions-list">
+            <li>Copy the calendar URL from the "Subscribe to calendar" button</li>
+            <li>Look for "Add calendar," "Subscribe," or "Import" in your calendar app</li>
+            <li>Choose "From URL" or "Web calendar" option</li>
+            <li>Paste the calendar URL</li>
+          </ol>
+          <p class="note"><strong>Compatible apps:</strong> Mozilla Thunderbird, Yahoo Calendar, CalDAV-compatible apps, and more</p>
+        </div>
+      </div>
+
+      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added — no need to re-subscribe!</p>
     </section>
 
     <footer>
-      <p>Fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
+      <p>An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
-        <a href="https://teslaowners.org.uk/events">Tesla Owners UK Events</a>
+        <a href="archive.html">📁 Event Archive</a>
         <span aria-hidden="true"> · </span>
-        <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar">Source</a>
+        <a href="https://teslaowners.org.uk/events" target="_blank" rel="noopener">🔗 Official Events Page</a>
+        <span aria-hidden="true"> · </span>
+        <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar" target="_blank" rel="noopener">⭐ GitHub</a>
       </p>
     </footer>
   </div>
+
+  <!-- Event Detail Modal -->
+  <div id="eventModal" class="modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-meta">
+        <div><strong>📅 Date:</strong> <span id="modalDate"></span></div>
+        <div><strong>🕒 Time:</strong> <span id="modalTime"></span></div>
+        <div><strong>📍 Location:</strong> <span id="modalLocation"></span></div>
+      </div>
+      <div class="modal-description" id="modalDescription"></div>
+      <a id="modalLink" href="#" target="_blank" rel="noopener" class="modal-link">View full details →</a>
+    </div>
+  </div>
+
   <script>
+  // Event data
+  const eventsData = [{"title": "Giga Texas 2026", "date": "16 Mar 2026", "time": "11:30", "location": "Austin, Texas", "description": "A very special opportunity for our Supporter Members of Tesla Owners UK. We have a limited number of tickets for a unique opportunity to see the Tesla Giga Factory in Austin Texas. The visit is in **M", "url": "https://teslaowners.org.uk/events/giga-texas-2026", "upcoming": true}, {"title": "Annual General Meeting", "date": "28 Mar 2026", "time": "10:30", "location": "Online", "description": "The 2026 AGM for Tesla Owners UK will be online. Details will be issued to all paid up supporters prior to the meeting.", "url": "https://teslaowners.org.uk/events/annual-general-meeting", "upcoming": true}, {"title": "Everything Electric - North", "date": "08 May 2026", "time": "10:00", "location": "Yorkshire Event Centre", "description": "Everything Electric North is at the Yorkshire Event Centre on 8 and 9 May 2026 for a fun-filled festival of electrification. We don't know what our club presence is going to be as yet, but if you woul", "url": "https://teslaowners.org.uk/events/fully-charged-south-2025-copy", "upcoming": true}, {"title": "Tesla Owners at Smiles for Miles 2026", "date": "31 May 2026", "time": "10:00", "location": "Hardwick Hall, Sedgfield", "description": "Join fellow Tesla Owners for a fun day out with this regional event at Hardwick Hall and have an action-packed day of Inclusive automotive excitement while raising funds for **JPC Community Hub CIC**,", "url": "https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026", "upcoming": true}, {"title": "Tesla Takeover Europe '26", "date": "05 Jun 2026", "time": "00:00", "location": "Flachau / Salzburg", "description": "Our friends at Tesla Owners Austria are hosting the Tesla Take Over Europe '26 in Flachau. Tesla Owners UK will be in attendance and welcome members to make a road trip of it to take part in a wide ra", "url": "https://teslaowners.org.uk/events/tesla-takeover-europe-26", "upcoming": true}, {"title": "Everything Electric West", "date": "12 Jun 2026", "time": "00:00", "location": "Cheltenham Racecourse", "description": "Everything Electric is coming to Cheltenham for the first time in 2026. We will update this save the date when we know what form our TOUK presence will be.", "url": "https://teslaowners.org.uk/events/everything-electric-west", "upcoming": true}, {"title": "Supercharged 2026", "date": "27 Jun 2026", "time": "10:00", "location": "Somewhere between London and Birmingham ", "description": "The 2026 edition of the Tesla Owners UK national member event will be bigger and better, with more driving opportunities and a new location to enjoy. Details will be announced in early 2026. Entry to ", "url": "https://teslaowners.org.uk/events/supercharged-2026", "upcoming": true}, {"title": "Tesla Owners UK @ Fully Charged Live - Show Cars", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Show your car with Tesla Owners UK.", "url": "https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars", "upcoming": false}, {"title": "TEST - Fully Charged Live Outside", "date": "03 Sep 2021", "time": "00:00", "location": "Farnborough International", "description": "Fully Charged Live Outside", "url": "https://teslaowners.org.uk/events/test-fully-charged-live", "upcoming": false}];
+
+  // Dark mode toggle
+  function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  }
+
+  // Load saved theme
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+
+  // Filter events
+  function filterEvents() {
+    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+    const eventCards = document.querySelectorAll('.featured-event');
+    let visibleCount = 0;
+
+    eventCards.forEach((card, idx) => {
+      const event = eventsData[idx];
+      const matchesSearch = !searchTerm ||
+        event.title.toLowerCase().includes(searchTerm) ||
+        event.location.toLowerCase().includes(searchTerm) ||
+        event.description.toLowerCase().includes(searchTerm);
+
+      if (matchesSearch) {
+        card.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Update count
+    const countSpan = document.getElementById('eventCount');
+    if (searchTerm) {
+      countSpan.textContent = `({visibleCount} shown)`;
+    } else {
+      countSpan.textContent = '';
+    }
+  }
+
+  // Show event modal
+  function showEventModal(idx) {
+    const event = eventsData[idx];
+    document.getElementById('modalTitle').textContent = event.title;
+    document.getElementById('modalDate').textContent = event.date;
+    document.getElementById('modalTime').textContent = event.time || 'TBA';
+    document.getElementById('modalLocation').textContent = event.location || 'TBA';
+    document.getElementById('modalDescription').textContent = event.description || 'No description available.';
+    document.getElementById('modalLink').href = event.url || '#';
+
+    if (!event.url) {
+      document.getElementById('modalLink').style.display = 'none';
+    } else {
+      document.getElementById('modalLink').style.display = 'inline-block';
+    }
+
+    document.getElementById('eventModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Close modal
+  function closeModal() {
+    document.getElementById('eventModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Escape key closes modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Accordion toggle
+  function toggleAccordion(id) {
+    const button = event.currentTarget;
+    const content = document.getElementById('accordion-' + id);
+    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+    // Close all accordions
+    document.querySelectorAll('.accordion-button').forEach(btn => {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('.accordion-content').forEach(content => {
+      content.classList.remove('active');
+    });
+
+    // Toggle current
+    if (!isExpanded) {
+      button.setAttribute('aria-expanded', 'true');
+      content.classList.add('active');
+    }
+  }
+
+  // Device-specific calendar link handling
   (function() {
     var ua = navigator.userAgent || '';
     var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
+    var isAndroid = /Android/.test(ua);
+
     document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {
       var href = link.getAttribute('href');
       if (!href) return;
       var abs = new URL(href, window.location.href).href;
-      if (isIOS || isMac) link.href = abs.replace(/^https?:\/\//, 'webcal://');
+
+      if (isIOS || isMac) {
+        // Use webcal:// protocol for Apple devices
+        link.href = abs.replace(/^https?:\/\//, 'webcal://');
+      } else if (isAndroid) {
+        // Use Google Calendar render URL for Android
+        link.href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(abs);
+      }
     });
   })();
   </script>

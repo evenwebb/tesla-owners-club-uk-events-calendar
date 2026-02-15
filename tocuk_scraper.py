@@ -1241,7 +1241,7 @@ def build_index_html(
   <div class="page">
     <header class="hero">
       <div class="badge">Tesla Owners UK · Live Calendar</div>
-      <h1>Events Calendar</h1>
+      <h1>Tesla Owners UK Events</h1>
       <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 {health_html}

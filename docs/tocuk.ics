@@ -22,12 +22,13 @@ LOCATION:Farnborough International
 GEO:51.2755416;-0.76105
 URL:https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars
 ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+CONTACT:mailto:events@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: September 3rd–June 6th, 2021
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg
 RESOURCES:Farnborough International
 X-TIMEZONE:UTC
 X-EVENT-ID:1103557
@@ -50,12 +51,13 @@ LAST-MODIFIED:20250219T135748Z
 LOCATION:Farnborough International
 URL:https://teslaowners.org.uk/events/test-fully-charged-live
 ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+CONTACT:mailto:events@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: September 3rd–June 6th, 2021
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg
 RESOURCES:Farnborough International
 X-TIMEZONE:UTC
 X-EVENT-ID:1103968
@@ -94,12 +96,13 @@ LOCATION:Austin, Texas
 GEO:30.2248156;-97.619548
 URL:https://teslaowners.org.uk/events/giga-texas-2026
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: Mountain Time (US & Canada)
 COMMENT:Date: March 16th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png
+ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png
 RESOURCES:Austin, Texas
 X-TIMEZONE:Mountain Time (US & Canada)
 X-EVENT-ID:1158338
@@ -123,12 +126,13 @@ LAST-MODIFIED:20260103T131129Z
 LOCATION:Online
 URL:https://teslaowners.org.uk/events/annual-general-meeting
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: March 28th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png
+ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png
 RESOURCES:Online
 X-TIMEZONE:UTC
 X-EVENT-ID:1157348
@@ -158,12 +162,13 @@ LOCATION:Yorkshire Event Centre
 GEO:51.2755416;-0.7610499999999999
 URL:https://teslaowners.org.uk/events/fully-charged-south-2025-copy
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: May 8th–9th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg
 RESOURCES:Yorkshire Event Centre
 X-TIMEZONE:UTC
 X-EVENT-ID:1156206
@@ -215,12 +220,13 @@ LOCATION:Hardwick Hall, Sedgfield
 GEO:54.6555788;-1.4656777
 URL:https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: May 31st, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png
+ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png
 RESOURCES:Hardwick Hall, Sedgfield
 X-TIMEZONE:UTC
 X-EVENT-ID:1157702
@@ -250,12 +256,13 @@ LOCATION:Flachau / Salzburg
 GEO:47.3414833;13.3909059
 URL:https://teslaowners.org.uk/events/tesla-takeover-europe-26
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: June 5th–6th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg
 RESOURCES:Flachau / Salzburg
 X-TIMEZONE:UTC
 X-EVENT-ID:1157349
@@ -282,12 +289,13 @@ LOCATION:Cheltenham Racecourse
 GEO:51.919184;-2.0687983
 URL:https://teslaowners.org.uk/events/everything-electric-west
 ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+CONTACT:mailto:events@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: June 12th–13th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg
 RESOURCES:Cheltenham Racecourse
 X-TIMEZONE:UTC
 X-EVENT-ID:1157350
@@ -317,12 +325,13 @@ LAST-MODIFIED:20260122T160752Z
 LOCATION:Somewhere between London and Birmingham 
 URL:https://teslaowners.org.uk/events/supercharged-2026
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
 COMMENT:Timezone: UTC
 COMMENT:Date: June 27th, 2026
 CATEGORIES:Tesla Owners UK,Event
 CLASS:PUBLIC
 STATUS:CONFIRMED
-ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/
 RESOURCES:Somewhere between London and Birmingham 
 X-TIMEZONE:UTC
 X-EVENT-ID:1157347

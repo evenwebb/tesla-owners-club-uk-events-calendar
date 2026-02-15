@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archive – Tesla Owners UK Events Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a24;
+      --border: rgba(0,212,255,0.25);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --cyan: #00d4ff;
+      --accent: #00d4ff;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 800px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .header {
+      text-align: center;
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .header .subtitle { color: var(--text-muted); }
+    .header .back-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .header .back-link:hover { text-decoration: underline; }
+    .stats {
+      text-align: center;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 2rem;
+    }
+    .archive-group { margin-bottom: 2rem; }
+    .archive-group h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .archive-events { display: flex; flex-direction: column; gap: 0.75rem; }
+    .archive-event {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem;
+      align-items: center;
+    }
+    .archive-date {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .archive-details { flex: 1; }
+    .archive-title { font-weight: 600; margin-bottom: 0.25rem; }
+    .location {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: block;
+    }
+    .archive-event a {
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .archive-event a:hover { text-decoration: underline; }
+    .no-events {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+    @media (max-width: 640px) {
+      .archive-event {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      .archive-event a { margin-top: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>Event Archive</h1>
+      <p class="subtitle">Past Tesla Owners UK events</p>
+      <a href="index.html" class="back-link">← Back to calendar</a>
+    </header>
+
+    <div class="stats">
+      <strong>2</strong> past events in archive
+    </div>
+
+    <div class="archive-group"><h3>September 2021</h3><div class="archive-events">
+        <div class="archive-event">
+          <div class="archive-date">03 Sep 2021</div>
+          <div class="archive-details">
+            <div class="archive-title">Tesla Owners UK @ Fully Charged Live - Show Cars</div>
+            <span class="location">Farnborough International</span>
+          </div>
+          <a href="https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars" target="_blank" rel="noopener">View details →</a>
+        </div>
+        <div class="archive-event">
+          <div class="archive-date">03 Sep 2021</div>
+          <div class="archive-details">
+            <div class="archive-title">TEST - Fully Charged Live Outside</div>
+            <span class="location">Farnborough International</span>
+          </div>
+          <a href="https://teslaowners.org.uk/events/test-fully-charged-live" target="_blank" rel="noopener">View details →</a>
+        </div></div></div>
+  </div>
+</body>
+</html>
