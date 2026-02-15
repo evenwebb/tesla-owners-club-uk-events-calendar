@@ -338,27 +338,37 @@ def escape_and_fold_ical_text(text: str, prefix: str = "") -> str:
 
 
 def generate_alarm(alarm_config: Dict[str, Any], event_start: datetime.datetime) -> str:
-    """Generate a VALARM component for iCalendar."""
-    time_str = alarm_config.get("time", NOTIFICATION_TIME)
-    time_parts = time_str.split(":")
-    hours = int(time_parts[0])
-    minutes = int(time_parts[1]) if len(time_parts) > 1 else 0
+    """Generate a VALARM component for iCalendar using RFC 5545 duration format."""
+    # Use RFC 5545 duration format for TRIGGER (e.g., -P1D = 1 day before)
+    days = alarm_config.get("days_before", 1)
 
-    if "days_before" in alarm_config:
-        days = alarm_config["days_before"]
-        trigger_dt = datetime.datetime.combine(
-            event_start.date(), datetime.time(hours, minutes)
-        )
-        trigger_dt -= datetime.timedelta(days=days)
-        trigger = trigger_dt.strftime("%Y%m%dT%H%M%S")
-        trigger_line = f"TRIGGER;VALUE=DATE-TIME:{trigger}"
+    # Convert to ISO 8601 duration format
+    if days == 0:
+        # On event day - use hours before if time is specified
+        time_str = alarm_config.get("time", NOTIFICATION_TIME)
+        time_parts = time_str.split(":")
+        hours = int(time_parts[0])
+        minutes = int(time_parts[1]) if len(time_parts) > 1 else 0
+
+        # Calculate hours before event
+        event_hour = event_start.hour if hasattr(event_start, 'hour') else 0
+        event_minute = event_start.minute if hasattr(event_start, 'minute') else 0
+
+        hours_before = event_hour - hours
+        minutes_before = event_minute - minutes
+
+        if hours_before < 0 or (hours_before == 0 and minutes_before <= 0):
+            # Time is same or after event, use 1 hour before as default
+            trigger_line = "TRIGGER:-PT1H"
+        else:
+            total_minutes = hours_before * 60 + minutes_before
+            if total_minutes >= 60:
+                trigger_line = f"TRIGGER:-PT{total_minutes // 60}H"
+            else:
+                trigger_line = f"TRIGGER:-PT{total_minutes}M"
     else:
-        trigger_dt = datetime.datetime.combine(
-            event_start.date(), datetime.time(hours, minutes)
-        )
-        trigger_dt -= datetime.timedelta(days=1)
-        trigger = trigger_dt.strftime("%Y%m%dT%H%M%S")
-        trigger_line = f"TRIGGER;VALUE=DATE-TIME:{trigger}"
+        # Days before event
+        trigger_line = f"TRIGGER:-P{days}D"
 
     description = alarm_config.get("description", "Event Reminder")
     return (
@@ -542,16 +552,12 @@ def make_ics_event(event: Dict[str, Any]) -> str:
         org_name = "Tesla Owners UK"
         lines.append(f'ORGANIZER;CN={org_name}:mailto:{organizer_email}')
 
-    # CONTACT (repeatable) - add other contact emails
-    seen = {organizer_email} if organizer_email else set()
+    # CONTACT (repeatable) - add all unique contact emails
+    seen_emails = set()
     for email in (reply_to_email, email_address):
-        if email and email not in seen:
-            seen.add(email)
+        if email and email not in seen_emails:
+            seen_emails.add(email)
             lines.append(f"CONTACT:mailto:{email}")
-    if not organizer_email and (reply_to_email or email_address):
-        for email in (reply_to_email, email_address):
-            if email:
-                lines.append(f"CONTACT:mailto:{email}")
 
     # COMMENT (repeatable) - extra metadata
     if timezone_name:
@@ -835,11 +841,13 @@ def main() -> None:
     if not has_new_events(current_upcoming_slugs, previous_slugs):
         logger.info("No new events (current=%d, previous=%d), skipping full scrape", len(current_upcoming_slugs), len(previous_slugs))
         print("No new events. Skipping update to reduce GitHub usage.")
+        # Update state file to reflect current upcoming events (important for when events move to past)
+        save_last_upcoming_slugs(list(current_upcoming_slugs))
         return
 
     # All events to output: past first, then future (sorted by start date)
     all_events = past_events + future_events
-    all_events.sort(key=lambda x: parse_iso_datetime(x.get("start_at", "")) or datetime.datetime.min)
+    all_events.sort(key=lambda x: parse_iso_datetime(x.get("start_at", "")) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc))
 
     # Fetch detail page for each event and merge (richer description, map coords, etc.)
     cache = load_cache()
@@ -874,23 +882,12 @@ def main() -> None:
     ics_path.write_text(ical_content, encoding="utf-8")
     logger.info("Wrote %s (%d events)", ics_path, len(event_lines))
 
-    # Upcoming slugs for state and index count
-    upcoming_slugs = []
-    for e in enriched_events:
-        slug = e.get("slug")
-        if not slug:
-            continue
-        start = parse_iso_datetime(e.get("start_at"))
-        if start:
-            if start.tzinfo is None:
-                start = start.replace(tzinfo=datetime.timezone.utc)
-            if start >= today:
-                upcoming_slugs.append(slug)
-    save_last_upcoming_slugs(upcoming_slugs)
+    # Save current upcoming slugs for next run comparison (reuse from earlier)
+    save_last_upcoming_slugs(list(current_upcoming_slugs))
 
     # Generate index
     index_path = Path(OUTPUT_DIR) / "index.html"
-    index_path.write_text(build_index_html(enriched_events, upcoming_count=len(upcoming_slugs)), encoding="utf-8")
+    index_path.write_text(build_index_html(enriched_events, upcoming_count=len(current_upcoming_slugs)), encoding="utf-8")
     logger.info("Wrote %s", index_path)
 
     print(f"\n✓ Created {OUTPUT_DIR}/ with tocuk.ics ({len(event_lines)} events) and index.html\n")

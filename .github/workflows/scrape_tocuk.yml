@@ -29,12 +29,11 @@ jobs:
 
       - name: Run scraper
         run: |
-          for i in 1 2; do
-            python tocuk_scraper.py && break
-            if [ $i -eq 2 ]; then exit 1; fi
+          python tocuk_scraper.py || {
             echo "Transient failure, retrying in 10 seconds..."
             sleep 10
-          done
+            python tocuk_scraper.py
+          }
 
       - name: Commit and push if changed
         run: |

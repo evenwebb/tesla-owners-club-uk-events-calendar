@@ -35,7 +35,7 @@ The script will fetch the latest events, write `docs/tocuk.ics` and `docs/index.
 
 ## GitHub Actions
 
-The workflow (`.github/workflows/scrape_tocuk.yml`) runs the scraper daily at 09:00 UTC. You can also trigger it manually from the **Actions** tab.
+The workflow (`.github/workflows/scrape_tocuk.yml`) runs the scraper weekly on Mondays at 09:00 UTC. You can also trigger it manually from the **Actions** tab.
 
 The workflow will:
 1. Install Python and dependencies
