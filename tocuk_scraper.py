@@ -857,6 +857,79 @@ def get_event_status(event: Dict[str, Any]) -> tuple[str, str]:
     return ("", "")
 
 
+def generate_json_ld(events: List[Dict[str, Any]]) -> str:
+    """Generate JSON-LD structured data for events (Schema.org Event type).
+
+    Returns:
+        JSON-LD script tag content for SEO
+    """
+    today = datetime.datetime.now(datetime.timezone.utc)
+    upcoming_events = []
+
+    for e in events:
+        start = parse_iso_datetime(e.get("start_at"))
+        if not start:
+            continue
+
+        start_aware = start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start
+        if start_aware < today:
+            continue  # Skip past events
+
+        end = parse_iso_datetime(e.get("end_at"))
+        location_name = e.get("location", "")
+
+        event_data = {
+            "@context": "https://schema.org",
+            "@type": "Event",
+            "name": e.get("title", ""),
+            "startDate": start.isoformat(),
+            "description": strip_html(e.get("description", ""))[:200],
+            "eventStatus": "https://schema.org/EventScheduled",
+            "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+            "organizer": {
+                "@type": "Organization",
+                "name": "Tesla Owners UK",
+                "url": "https://teslaowners.org.uk"
+            }
+        }
+
+        if end:
+            event_data["endDate"] = end.isoformat()
+
+        if location_name:
+            if "online" in location_name.lower():
+                event_data["eventAttendanceMode"] = "https://schema.org/OnlineEventAttendanceMode"
+                event_data["location"] = {
+                    "@type": "VirtualLocation",
+                    "url": "https://teslaowners.org.uk"
+                }
+            else:
+                event_data["location"] = {
+                    "@type": "Place",
+                    "name": location_name,
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": location_name.split(",")[0].strip() if "," in location_name else location_name
+                    }
+                }
+
+        if e.get("banner_url"):
+            event_data["image"] = e.get("banner_url")
+
+        slug = e.get("slug")
+        if slug:
+            event_data["url"] = f"https://teslaowners.org.uk/events/{slug}"
+
+        upcoming_events.append(event_data)
+
+    if not upcoming_events:
+        return ""
+
+    # Return as JSON-LD script tag
+    json_content = json.dumps(upcoming_events, indent=2, ensure_ascii=False)
+    return f'<script type="application/ld+json">\n{json_content}\n</script>'
+
+
 def build_index_html(
     events: List[Dict[str, Any]],
     upcoming_count: Optional[int] = None,
@@ -1029,6 +1102,29 @@ def build_index_html(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tesla Owners UK – Events Calendar</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Subscribe to Tesla Owners UK events calendar - track days, meetups, AGMs and exhibitions. Never miss an event with automatic updates.">
+  <meta name="keywords" content="Tesla, Tesla Owners UK, TOCUK, events, calendar, meetups, track days, AGM, Supercharged, Everything Electric">
+  <meta name="author" content="evenwebb">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/">
+  <meta property="og:title" content="Tesla Owners UK Events Calendar">
+  <meta property="og:description" content="Never miss a Tesla Owners UK event - subscribe once, stay updated forever. Track days, meetups, AGMs and exclusive gatherings.">
+  <meta property="og:site_name" content="Tesla Owners UK Events">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/">
+  <meta name="twitter:title" content="Tesla Owners UK Events Calendar">
+  <meta name="twitter:description" content="Never miss a Tesla Owners UK event - subscribe once, stay updated forever">
+
+  <!-- Mobile Theme Color -->
+  <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: light)">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1563,6 +1659,9 @@ def build_index_html(
       box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
     }}
   </style>
+
+  <!-- Structured Data (JSON-LD) for SEO -->
+  {generate_json_ld(events)}
 </head>
 <body>
   <div class="page">
@@ -2005,6 +2104,29 @@ def build_archive_template(events_html: str, event_count: int) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Archive – Tesla Owners UK Events Calendar</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Browse past Tesla Owners UK events - track days, meetups, AGMs and exhibitions. Archive of completed community gatherings.">
+  <meta name="keywords" content="Tesla, Tesla Owners UK, TOCUK, events archive, past events, history">
+  <meta name="author" content="evenwebb">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/archive.html">
+  <meta property="og:title" content="Event Archive – Tesla Owners UK">
+  <meta property="og:description" content="Browse past Tesla Owners UK events and community gatherings">
+  <meta property="og:site_name" content="Tesla Owners UK Events">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/archive.html">
+  <meta name="twitter:title" content="Event Archive – Tesla Owners UK">
+  <meta name="twitter:description" content="Browse past Tesla Owners UK events and community gatherings">
+
+  <!-- Mobile Theme Color -->
+  <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: light)">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
