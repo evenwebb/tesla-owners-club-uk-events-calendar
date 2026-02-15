@@ -1522,6 +1522,46 @@ def build_index_html(
     }}
     footer a {{ color: var(--cyan); text-decoration: none; }}
     footer a:hover {{ text-decoration: underline; }}
+
+    .referral-cta {{
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(229, 62, 62, 0.1));
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }}
+    .referral-title {{
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }}
+    .referral-text {{
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }}
+    .referral-note {{
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }}
+    .referral-link {{
+      display: inline-block;
+      background: var(--cyan);
+      color: var(--bg);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      text-decoration: none !important;
+      transition: all 0.2s ease;
+    }}
+    .referral-link:hover {{
+      background: #00b8e6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }}
   </style>
 </head>
 <body>
@@ -1685,7 +1725,15 @@ def build_index_html(
     </section>
 
     <footer>
-      <p>An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
+      <div class="referral-cta">
+        <p class="referral-title">🚗 Ordering a Tesla?</p>
+        <p class="referral-text">Use my referral link and get <strong>650 free Supercharging miles</strong> or <strong>£500 off</strong> your new Tesla!</p>
+        <p class="referral-note">(First 10 people — benefits vary by product)</p>
+        <a href="https://ts.la/steven201536" target="_blank" rel="noopener" class="referral-link">Claim Your Tesla Benefits →</a>
+      </div>
+
+      <p style="margin-top: 1.5rem;">Created by <a href="https://github.com/evenwebb" target="_blank" rel="noopener">evenwebb</a> — Tesla owner & fan 🔋</p>
+      <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
         <a href="archive.html">📁 Event Archive</a>
         <span aria-hidden="true"> · </span>
