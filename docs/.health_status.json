@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "last_update": "2026-02-15T13:09:19.752861+00:00",
-  "event_count": 9,
-  "message": "Successfully processed 9 events (7 upcoming)",
+  "last_update": "2026-02-15T13:14:33.845548+00:00",
+  "event_count": 7,
+  "message": "No new events detected (7 upcoming events)",
   "error": null
 }
