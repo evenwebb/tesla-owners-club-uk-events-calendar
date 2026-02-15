@@ -42,6 +42,9 @@ FETCH_DELAY_SEC = 0.5  # Delay between detail page requests
 # State file to detect new events (skip full scrape when no new events)
 STATE_FILE = "docs/.last_upcoming.json"
 
+# Health status file for monitoring
+HEALTH_FILE = "docs/.health_status.json"
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 error_handler = logging.FileHandler(LOG_FILE)
@@ -83,12 +86,35 @@ def fetch_with_retries(
     raise requests.RequestException("All retries exhausted")
 
 
-def extract_events_from_page(html: str) -> List[Dict[str, Any]]:
-    """Extract events from __NEXT_DATA__ JSON embedded in the page.
+def validate_event_data(event: Dict[str, Any]) -> bool:
+    """Validate that event dict has minimum required fields.
+
+    Args:
+        event: Event dictionary to validate
 
     Returns:
-        List of event dicts with title, start_at, end_at, location, description, url, slug.
+        True if event has required fields, False otherwise
     """
+    # Must have at least a title or slug
+    if not event.get("title") and not event.get("slug"):
+        logger.warning("Event missing both title and slug: %s", event)
+        return False
+
+    # Must have a start time
+    if not event.get("start_at"):
+        logger.warning("Event %s missing start_at", event.get("title") or event.get("slug"))
+        return False
+
+    return True
+
+
+def extract_events_from_page(html: str) -> List[Dict[str, Any]]:
+    """Extract events from __NEXT_DATA__ JSON embedded in the page with validation.
+
+    Returns:
+        List of valid event dicts with title, start_at, end_at, location, description, url, slug.
+    """
+    # Try to find __NEXT_DATA__
     match = re.search(
         r'<script id="__NEXT_DATA__" type="application/json">(.+?)</script>',
         html,
@@ -96,27 +122,86 @@ def extract_events_from_page(html: str) -> List[Dict[str, Any]]:
     )
     if not match:
         logger.error("Could not find __NEXT_DATA__ in page")
+        # Attempt fallback: look for alternative script tags or data attributes
+        # (This would be where you'd add alternative parsing strategies if the site changes)
+        logger.info("Attempting fallback parsing strategies...")
+        # For now, return empty - could add more sophisticated fallbacks here
         return []
 
+    # Parse JSON with error handling
     try:
         data = json.loads(match.group(1))
     except json.JSONDecodeError as e:
         logger.error("Failed to parse __NEXT_DATA__ JSON: %s", e)
+        logger.debug("JSON content: %s", match.group(1)[:500])  # Log first 500 chars for debugging
         return []
 
-    events_data = data.get("props", {}).get("pageProps", {}).get("events", {})
-    upcoming = events_data.get("upcoming", [])
-    past = events_data.get("past", [])
+    # Validate schema structure
+    if not isinstance(data, dict):
+        logger.error("__NEXT_DATA__ is not a dict: %s", type(data))
+        return []
+
+    props = data.get("props")
+    if not isinstance(props, dict):
+        logger.error("props is missing or not a dict")
+        return []
+
+    page_props = props.get("pageProps")
+    if not isinstance(page_props, dict):
+        logger.error("pageProps is missing or not a dict")
+        return []
+
+    events_data = page_props.get("events")
+    if not isinstance(events_data, dict):
+        logger.warning("events is missing or not a dict, trying direct event list")
+        # Fallback: check if pageProps itself contains event array
+        if isinstance(page_props.get("events"), list):
+            upcoming = page_props.get("events", [])
+            past = []
+        else:
+            logger.error("Could not find events data in expected structure")
+            return []
+    else:
+        upcoming = events_data.get("upcoming", [])
+        past = events_data.get("past", [])
+
+    # Validate event lists are actually lists
+    if not isinstance(upcoming, list):
+        logger.warning("upcoming is not a list, using empty list")
+        upcoming = []
+    if not isinstance(past, list):
+        logger.warning("past is not a list, using empty list")
+        past = []
+
     # Merge and deduplicate by slug (upcoming takes precedence)
+    # Also validate each event has minimum required fields
     seen = set()
     merged = []
+    invalid_count = 0
+
     for e in upcoming + past:
+        if not isinstance(e, dict):
+            logger.warning("Skipping non-dict event: %s", type(e))
+            invalid_count += 1
+            continue
+
+        # Validate event has required fields
+        if not validate_event_data(e):
+            invalid_count += 1
+            continue
+
         slug = e.get("slug")
         if slug and slug not in seen:
             seen.add(slug)
             merged.append(e)
         elif not slug:
+            # Events without slugs are not deduplicated
             merged.append(e)
+
+    if invalid_count > 0:
+        logger.warning("Skipped %d invalid events", invalid_count)
+
+    logger.info("Successfully extracted %d valid events", len(merged))
     return merged
 
 
@@ -184,11 +269,52 @@ def has_new_events(current_slugs: set, previous_slugs: set) -> bool:
     return bool(current_slugs - previous_slugs)
 
 
+def save_health_status(
+    status: str,
+    event_count: int,
+    message: str = "",
+    error: Optional[str] = None
+) -> None:
+    """Save health status for monitoring and display.
+
+    Args:
+        status: "success", "partial", or "error"
+        event_count: Number of events processed
+        message: Human-readable status message
+        error: Error message if status is "error"
+    """
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    health_data = {
+        "status": status,
+        "last_update": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "event_count": event_count,
+        "message": message,
+        "error": error,
+    }
+    try:
+        with open(HEALTH_FILE, "w", encoding="utf-8") as f:
+            json.dump(health_data, f, indent=2)
+        logger.info("Saved health status: %s", status)
+    except OSError as e:
+        logger.warning("Health status save failed: %s", e)
+
+
+def load_health_status() -> Optional[Dict[str, Any]]:
+    """Load health status from disk."""
+    if not os.path.exists(HEALTH_FILE):
+        return None
+    try:
+        with open(HEALTH_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def extract_event_from_detail_page(html: str) -> Optional[Dict[str, Any]]:
-    """Extract full event data from __NEXT_DATA__ on an event detail page.
+    """Extract full event data from __NEXT_DATA__ on an event detail page with validation.
 
     Returns:
-        Event dict from pageProps.event, or None if not found.
+        Event dict from pageProps.event, or None if not found or invalid.
     """
     match = re.search(
         r'<script id="__NEXT_DATA__" type="application/json">(.+?)</script>',
@@ -196,13 +322,41 @@ def extract_event_from_detail_page(html: str) -> Optional[Dict[str, Any]]:
         re.DOTALL,
     )
     if not match:
+        logger.debug("No __NEXT_DATA__ found in detail page")
         return None
+
     try:
         data = json.loads(match.group(1))
-        event = data.get("props", {}).get("pageProps", {}).get("event")
-        return event if isinstance(event, dict) else None
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.warning("Failed to parse detail page JSON: %s", e)
         return None
+
+    # Validate structure
+    if not isinstance(data, dict):
+        logger.warning("Detail page data is not a dict")
+        return None
+
+    props = data.get("props")
+    if not isinstance(props, dict):
+        logger.warning("Detail page props missing or invalid")
+        return None
+
+    page_props = props.get("pageProps")
+    if not isinstance(page_props, dict):
+        logger.warning("Detail page pageProps missing or invalid")
+        return None
+
+    event = page_props.get("event")
+    if not isinstance(event, dict):
+        logger.warning("Detail page event missing or not a dict")
+        return None
+
+    # Validate minimum fields
+    if not validate_event_data(event):
+        logger.warning("Detail page event failed validation")
+        return None
+
+    return event
 
 
 def fetch_event_detail(slug: str, cache: Dict[str, dict]) -> Optional[Dict[str, Any]]:
@@ -574,9 +728,17 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     # STATUS
     lines.append("STATUS:CONFIRMED")
 
-    # ATTACH - banner image
+    # ATTACH - banner image with format type for better client support
     if banner_url and banner_url.startswith("http"):
-        lines.append(f"ATTACH:{banner_url}")
+        # Determine MIME type from URL extension
+        fmttype = "image/jpeg"
+        if banner_url.lower().endswith(".png"):
+            fmttype = "image/png"
+        elif banner_url.lower().endswith(".gif"):
+            fmttype = "image/gif"
+        elif banner_url.lower().endswith(".webp"):
+            fmttype = "image/webp"
+        lines.append(f"ATTACH;FMTTYPE={fmttype}:{banner_url}")
 
     # RESOURCES - venue/location as resource
     if location:
@@ -601,13 +763,90 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int] = None) -> str:
+def get_event_status(event: Dict[str, Any]) -> tuple[str, str]:
+    """Determine event status and badge emoji.
+
+    Returns:
+        (status_text, emoji) tuple
+    """
+    tickets_count = event.get("tickets_count")
+    registrations_count = event.get("registrations_count")
+    releases = event.get("releases") or []
+
+    # Check if sold out (no tickets available in any release)
+    if releases:
+        available = sum(r.get("quantity_available", 0) for r in releases if isinstance(r.get("quantity_available"), int))
+        if available == 0:
+            return ("Sold out", "❌")
+        elif available <= 10:
+            return (f"{available} tickets left", "⚠️")
+
+    # Check registration/ticket counts
+    if tickets_count is not None and tickets_count > 0:
+        if registrations_count is not None:
+            capacity_pct = (registrations_count / tickets_count) * 100 if tickets_count > 0 else 0
+            if capacity_pct >= 100:
+                return ("Sold out", "❌")
+            elif capacity_pct >= 80:
+                return ("Limited tickets", "⚠️")
+            else:
+                return ("Open for registration", "✅")
+        else:
+            return ("Open for registration", "✅")
+
+    return ("", "")
+
+
+def build_index_html(
+    events: List[Dict[str, Any]],
+    upcoming_count: Optional[int] = None,
+    health_status: Optional[Dict[str, Any]] = None
+) -> str:
     """Build the index HTML page with calendar link and featured events."""
     ics_url = "tocuk.ics"
     count = upcoming_count if upcoming_count is not None else len(events)
 
-    # Featured: show upcoming events first, then past (up to 8)
+    # Build health status display
+    health_html = ""
+    if health_status:
+        last_update = health_status.get("last_update", "")
+        status = health_status.get("status", "unknown")
+        message = health_status.get("message", "")
+        error = health_status.get("error")
+
+        if last_update:
+            try:
+                update_dt = datetime.datetime.fromisoformat(last_update.replace("Z", "+00:00"))
+                now = datetime.datetime.now(datetime.timezone.utc)
+                delta = now - update_dt
+                if delta.total_seconds() < 3600:
+                    time_ago = f"{int(delta.total_seconds() / 60)} minutes ago"
+                elif delta.total_seconds() < 86400:
+                    time_ago = f"{int(delta.total_seconds() / 3600)} hours ago"
+                else:
+                    time_ago = f"{int(delta.total_seconds() / 86400)} days ago"
+            except (ValueError, TypeError):
+                time_ago = "recently"
+        else:
+            time_ago = "unknown"
+
+        status_emoji = "✅" if status == "success" else ("⚠️" if status == "partial" else "❌")
+        status_class = "success" if status == "success" else ("warning" if status == "partial" else "error")
+
+        health_html = f'''
+    <div class="health-status {status_class}">
+      <div class="health-icon">{status_emoji}</div>
+      <div class="health-info">
+        <div class="health-main">Last updated: {time_ago}</div>
+        <div class="health-message">{message}</div>
+        {f'<div class="health-error">Error: {error}</div>' if error else ''}
+      </div>
+    </div>'''
+
+    # Featured: show upcoming events first, then past - render ALL for filtering
     featured_html = ""
+    events_json_data = []
+
     if events:
         today = datetime.datetime.now(datetime.timezone.utc)
         upcoming_first = []
@@ -620,14 +859,44 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
             else:
                 upcoming_first.append(e)
         ordered = upcoming_first + past
+
+        # Build event cards with full data for search/filter
         featured_items = []
-        for e in ordered[:8]:
+        for idx, e in enumerate(ordered):
             start = parse_iso_datetime(e.get("start_at"))
             date_str = start.strftime("%d %b %Y") if start else ""
+            time_str = start.strftime("%H:%M") if start else ""
             title = e.get("title", "Event")
+            location = e.get("location", "")
+            description = strip_html(e.get("description", ""))[:200]
+            slug = e.get("slug", "")
+            url = f"https://teslaowners.org.uk/events/{slug}" if slug else ""
+            status_text, status_emoji = get_event_status(e)
+
+            # Determine if upcoming
+            is_upcoming = start and (start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start) >= today
+            status_badge = ""
+            if is_upcoming and status_text:
+                status_badge = f'<span class="status-badge">{status_emoji} {status_text}</span>'
+
+            # Store event data for JavaScript
+            events_json_data.append({
+                "title": title,
+                "date": date_str,
+                "time": time_str,
+                "location": location,
+                "description": description,
+                "url": url,
+                "upcoming": is_upcoming
+            })
+
+            # Event card with click handler
             featured_items.append(
-                f'<div class="featured-event">'
-                f'<span class="date">{date_str}</span>{title}'
+                f'<div class="featured-event" data-event-idx="{idx}" onclick="showEventModal({idx})">'
+                f'<span class="date">{date_str}</span>'
+                f'<span class="title">{title}</span>'
+                f'<span class="location-small">{location[:30]}{"..." if len(location) > 30 else ""}</span>'
+                f'{status_badge}'
                 f"</div>"
             )
         featured_html = "\n        ".join(featured_items)
@@ -656,6 +925,15 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
       --radius: 16px;
       --radius-sm: 10px;
     }}
+    [data-theme="light"] {{
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --surface-2: #e9ecef;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-muted: #6c757d;
+      --accent-dim: rgba(0,212,255,0.1);
+    }}
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
       font-family: 'Space Grotesk', system-ui, sans-serif;
@@ -664,8 +942,94 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
       line-height: 1.6;
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
     }}
     .page {{ max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }}
+    .controls {{
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }}
+    .search-box {{
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }}
+    .search-box::placeholder {{ color: var(--text-muted); }}
+    .theme-toggle {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }}
+    .theme-toggle:hover {{ transform: scale(1.05); }}
+    .modal {{
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 2rem;
+      overflow-y: auto;
+    }}
+    .modal.active {{ display: flex; align-items: center; justify-content: center; }}
+    .modal-content {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+    }}
+    .modal-close {{
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
+    }}
+    .modal-close:hover {{ color: var(--text); }}
+    .modal-title {{ font-size: 1.5rem; margin-bottom: 1rem; padding-right: 2rem; }}
+    .modal-meta {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }}
+    .modal-meta strong {{ color: var(--accent); }}
+    .modal-description {{ line-height: 1.7; margin-bottom: 1.5rem; }}
+    .modal-link {{
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }}
+    .modal-link:hover {{ opacity: 0.9; }}
     .hero {{
       text-align: center;
       padding: 3rem 0 2rem;
@@ -730,14 +1094,61 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
       border-radius: var(--radius-sm);
       padding: 1rem;
       font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }}
+    .featured-event:hover {{
+      transform: translateY(-2px);
+      border-color: var(--accent);
     }}
     .featured-event .date {{
       font-size: 0.75rem;
       color: var(--accent);
       font-weight: 600;
-      margin-bottom: 0.5rem;
       display: block;
     }}
+    .featured-event .title {{
+      font-weight: 500;
+      line-height: 1.3;
+    }}
+    .featured-event .location-small {{
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }}
+    .featured-event .status-badge {{
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: inline-block;
+      margin-top: 0.25rem;
+      width: fit-content;
+    }}
+    .featured-event.hidden {{ display: none; }}
+    .health-status {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin: 1.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }}
+    .health-status.success {{ border-color: rgba(34, 197, 94, 0.4); }}
+    .health-status.warning {{ border-color: rgba(251, 191, 36, 0.4); }}
+    .health-status.error {{ border-color: rgba(239, 68, 68, 0.4); }}
+    .health-icon {{ font-size: 1.5rem; }}
+    .health-info {{ flex: 1; }}
+    .health-main {{ font-weight: 500; }}
+    .health-message {{ font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }}
+    .health-error {{ font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }}
     .howto-section {{ margin: 3rem 0; }}
     .howto-section h2 {{ font-size: 1.25rem; margin-bottom: 1rem; }}
     .howto-section p {{ color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.95rem; }}
@@ -760,16 +1171,21 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
       <h1>Events Calendar</h1>
       <p class="tagline">Subscribe to Tesla Owners UK events. Track days, meetups, AGMs and more.</p>
     </header>
-
+{health_html}
     <section class="card">
       <h2>Subscribe to the calendar</h2>
       <p class="meta">{count} upcoming event{'' if count == 1 else 's'}</p>
       <a href="{ics_url}" class="btn">Subscribe to calendar</a>
     </section>
 
+    <div class="controls">
+      <input type="text" class="search-box" id="searchBox" placeholder="Search events by title or location..." onkeyup="filterEvents()">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌓</button>
+    </div>
+
     <section class="featured-section">
-      <h2>Upcoming events</h2>
-      <div class="featured-grid">
+      <h2>Upcoming events <span id="eventCount"></span></h2>
+      <div class="featured-grid" id="eventGrid">
         {featured_html}
       </div>
     </section>
@@ -784,13 +1200,111 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
     <footer>
       <p>Fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
+        <a href="archive.html">Event Archive</a>
+        <span aria-hidden="true"> · </span>
         <a href="https://teslaowners.org.uk/events">Tesla Owners UK Events</a>
         <span aria-hidden="true"> · </span>
         <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar">Source</a>
       </p>
     </footer>
   </div>
+
+  <!-- Event Detail Modal -->
+  <div id="eventModal" class="modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-meta">
+        <div><strong>📅 Date:</strong> <span id="modalDate"></span></div>
+        <div><strong>🕒 Time:</strong> <span id="modalTime"></span></div>
+        <div><strong>📍 Location:</strong> <span id="modalLocation"></span></div>
+      </div>
+      <div class="modal-description" id="modalDescription"></div>
+      <a id="modalLink" href="#" target="_blank" rel="noopener" class="modal-link">View full details →</a>
+    </div>
+  </div>
+
   <script>
+  // Event data
+  const eventsData = {json.dumps(events_json_data)};
+
+  // Dark mode toggle
+  function toggleTheme() {{
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  }}
+
+  // Load saved theme
+  (function() {{
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }})();
+
+  // Filter events
+  function filterEvents() {{
+    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+    const eventCards = document.querySelectorAll('.featured-event');
+    let visibleCount = 0;
+
+    eventCards.forEach((card, idx) => {{
+      const event = eventsData[idx];
+      const matchesSearch = !searchTerm ||
+        event.title.toLowerCase().includes(searchTerm) ||
+        event.location.toLowerCase().includes(searchTerm) ||
+        event.description.toLowerCase().includes(searchTerm);
+
+      if (matchesSearch) {{
+        card.classList.remove('hidden');
+        visibleCount++;
+      }} else {{
+        card.classList.add('hidden');
+      }}
+    }});
+
+    // Update count
+    const countSpan = document.getElementById('eventCount');
+    if (searchTerm) {{
+      countSpan.textContent = `({{visibleCount}} shown)`;
+    }} else {{
+      countSpan.textContent = '';
+    }}
+  }}
+
+  // Show event modal
+  function showEventModal(idx) {{
+    const event = eventsData[idx];
+    document.getElementById('modalTitle').textContent = event.title;
+    document.getElementById('modalDate').textContent = event.date;
+    document.getElementById('modalTime').textContent = event.time || 'TBA';
+    document.getElementById('modalLocation').textContent = event.location || 'TBA';
+    document.getElementById('modalDescription').textContent = event.description || 'No description available.';
+    document.getElementById('modalLink').href = event.url || '#';
+
+    if (!event.url) {{
+      document.getElementById('modalLink').style.display = 'none';
+    }} else {{
+      document.getElementById('modalLink').style.display = 'inline-block';
+    }}
+
+    document.getElementById('eventModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }}
+
+  // Close modal
+  function closeModal() {{
+    document.getElementById('eventModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }}
+
+  // Escape key closes modal
+  document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') closeModal();
+  }});
+
+  // Webcal protocol for iOS/Mac
   (function() {{
     var ua = navigator.userAgent || '';
     var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -807,16 +1321,212 @@ def build_index_html(events: List[Dict[str, Any]], upcoming_count: Optional[int]
 </html>"""
 
 
+def build_archive_html(past_events: List[Dict[str, Any]]) -> str:
+    """Build the archive HTML page with past events organized by year/month."""
+    if not past_events:
+        events_html = '<p class="no-events">No past events in archive yet.</p>'
+        return build_archive_template(events_html, 0)
+
+    # Group by year and month
+    events_by_year_month = {}
+    for e in past_events:
+        start = parse_iso_datetime(e.get("start_at"))
+        if not start:
+            continue
+        year = start.year
+        month = start.strftime("%B")
+        key = (year, month, start.month)  # Include numeric month for sorting
+        if key not in events_by_year_month:
+            events_by_year_month[key] = []
+        events_by_year_month[key].append((e, start))
+
+    # Sort by year/month descending (most recent first)
+    sorted_groups = sorted(events_by_year_month.items(), key=lambda x: (x[0][0], x[0][2]), reverse=True)
+
+    # Build HTML
+    events_html = ""
+    for (year, month_name, _), events_list in sorted_groups:
+        events_html += f'<div class="archive-group"><h3>{month_name} {year}</h3><div class="archive-events">'
+        # Sort events within month by date
+        events_list.sort(key=lambda x: x[1], reverse=True)
+        for event, start in events_list:
+            title = event.get("title", "Untitled Event")
+            location = event.get("location", "")
+            date_str = start.strftime("%d %b %Y")
+            slug = event.get("slug", "")
+            url = f"https://teslaowners.org.uk/events/{slug}" if slug else ""
+
+            location_html = f'<span class="location">{location}</span>' if location else ''
+            link_html = f'<a href="{url}" target="_blank" rel="noopener">View details →</a>' if url else ''
+
+            events_html += f'''
+        <div class="archive-event">
+          <div class="archive-date">{date_str}</div>
+          <div class="archive-details">
+            <div class="archive-title">{title}</div>
+            {location_html}
+          </div>
+          {link_html}
+        </div>'''
+        events_html += '</div></div>'
+
+    return build_archive_template(events_html, len(past_events))
+
+
+def build_archive_template(events_html: str, event_count: int) -> str:
+    """Build the archive page template."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archive – Tesla Owners UK Events Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {{
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a24;
+      --border: rgba(0,212,255,0.25);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --cyan: #00d4ff;
+      --accent: #00d4ff;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }}
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .page {{ max-width: 800px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }}
+    .header {{
+      text-align: center;
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }}
+    .header h1 {{ font-size: 2rem; margin-bottom: 0.5rem; }}
+    .header .subtitle {{ color: var(--text-muted); }}
+    .header .back-link {{
+      display: inline-block;
+      margin-top: 1rem;
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }}
+    .header .back-link:hover {{ text-decoration: underline; }}
+    .stats {{
+      text-align: center;
+      padding: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 2rem;
+    }}
+    .archive-group {{ margin-bottom: 2rem; }}
+    .archive-group h3 {{
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }}
+    .archive-events {{ display: flex; flex-direction: column; gap: 0.75rem; }}
+    .archive-event {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem;
+      align-items: center;
+    }}
+    .archive-date {{
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }}
+    .archive-details {{ flex: 1; }}
+    .archive-title {{ font-weight: 600; margin-bottom: 0.25rem; }}
+    .location {{
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: block;
+    }}
+    .archive-event a {{
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }}
+    .archive-event a:hover {{ text-decoration: underline; }}
+    .no-events {{
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }}
+    @media (max-width: 640px) {{
+      .archive-event {{
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }}
+      .archive-event a {{ margin-top: 0.5rem; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>Event Archive</h1>
+      <p class="subtitle">Past Tesla Owners UK events</p>
+      <a href="index.html" class="back-link">← Back to calendar</a>
+    </header>
+
+    <div class="stats">
+      <strong>{event_count}</strong> past event{'' if event_count == 1 else 's'} in archive
+    </div>
+
+    {events_html}
+  </div>
+</body>
+</html>"""
+
+
 def main() -> None:
     """Main function to scrape events and generate iCal file."""
-    logger.info("Fetching events from %s", EVENTS_URL)
-    response = fetch_with_retries(EVENTS_URL)
-    events = extract_events_from_page(response.text)
+    try:
+        logger.info("Fetching events from %s", EVENTS_URL)
+        response = fetch_with_retries(EVENTS_URL)
+        events = extract_events_from_page(response.text)
 
-    if not events:
-        logger.warning("No events found")
-        print("No events found.")
-        return
+        if not events:
+            logger.warning("No events found")
+            print("No events found.")
+            save_health_status(
+                "error",
+                0,
+                "No events found on website",
+                "Event extraction returned empty list"
+            )
+            return
+    except Exception as e:
+        logger.error("Failed to fetch or parse events: %s", e)
+        save_health_status(
+            "error",
+            0,
+            "Failed to fetch events from website",
+            str(e)
+        )
+        raise
 
     # Split into future and past (keep all events for output)
     today = datetime.datetime.now(datetime.timezone.utc)
@@ -843,6 +1553,12 @@ def main() -> None:
         print("No new events. Skipping update to reduce GitHub usage.")
         # Update state file to reflect current upcoming events (important for when events move to past)
         save_last_upcoming_slugs(list(current_upcoming_slugs))
+        # Update health status (no error, just no new events)
+        save_health_status(
+            "success",
+            len(current_upcoming_slugs),
+            f"No new events detected ({len(current_upcoming_slugs)} upcoming events)"
+        )
         return
 
     # All events to output: past first, then future (sorted by start date)
@@ -885,12 +1601,38 @@ def main() -> None:
     # Save current upcoming slugs for next run comparison (reuse from earlier)
     save_last_upcoming_slugs(list(current_upcoming_slugs))
 
-    # Generate index
+    # Save health status
+    save_health_status(
+        "success",
+        len(event_lines),
+        f"Successfully processed {len(event_lines)} events ({len(current_upcoming_slugs)} upcoming)"
+    )
+
+    # Generate index with health status
+    health_status = load_health_status()
     index_path = Path(OUTPUT_DIR) / "index.html"
-    index_path.write_text(build_index_html(enriched_events, upcoming_count=len(current_upcoming_slugs)), encoding="utf-8")
+    index_path.write_text(
+        build_index_html(enriched_events, upcoming_count=len(current_upcoming_slugs), health_status=health_status),
+        encoding="utf-8"
+    )
     logger.info("Wrote %s", index_path)
 
-    print(f"\n✓ Created {OUTPUT_DIR}/ with tocuk.ics ({len(event_lines)} events) and index.html\n")
+    # Generate archive page with past events
+    # Filter enriched events to get only past ones
+    today = datetime.datetime.now(datetime.timezone.utc)
+    past_enriched = []
+    for e in enriched_events:
+        start = parse_iso_datetime(e.get("start_at"))
+        if start:
+            s = start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start
+            if s < today:
+                past_enriched.append(e)
+
+    archive_path = Path(OUTPUT_DIR) / "archive.html"
+    archive_path.write_text(build_archive_html(past_enriched), encoding="utf-8")
+    logger.info("Wrote %s with %d past events", archive_path, len(past_enriched))
+
+    print(f"\n✓ Created {OUTPUT_DIR}/ with tocuk.ics ({len(event_lines)} events), index.html, and archive.html\n")
     for event in enriched_events:
         start = parse_iso_datetime(event.get("start_at"))
         date_str = start.strftime("%d %B %Y %H:%M") if start else "?"
