@@ -1150,8 +1150,81 @@ def build_index_html(
     .health-message {{ font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }}
     .health-error {{ font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }}
     .howto-section {{ margin: 3rem 0; }}
-    .howto-section h2 {{ font-size: 1.25rem; margin-bottom: 1rem; }}
-    .howto-section p {{ color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.95rem; }}
+    .howto-section h2 {{ font-size: 1.25rem; margin-bottom: 0.5rem; }}
+    .howto-intro {{ color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }}
+    .howto-footer {{
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      text-align: center;
+      color: var(--text-muted);
+    }}
+    .accordion-group {{ display: flex; flex-direction: column; gap: 0.5rem; }}
+    .accordion-button {{
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }}
+    .accordion-button:hover {{
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }}
+    .accordion-button[aria-expanded="true"] {{
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-color: transparent;
+    }}
+    .accordion-icon {{ font-size: 1.25rem; }}
+    .accordion-title {{ flex: 1; }}
+    .accordion-chevron {{
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }}
+    .accordion-button[aria-expanded="true"] .accordion-chevron {{
+      transform: rotate(180deg);
+    }}
+    .accordion-content {{
+      display: none;
+      padding: 1.5rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: var(--radius-sm);
+      border-bottom-right-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+    }}
+    .accordion-content.active {{ display: block; }}
+    .instructions-list {{
+      margin: 0.75rem 0;
+      padding-left: 1.5rem;
+      line-height: 1.8;
+    }}
+    .instructions-list li {{ margin-bottom: 0.5rem; }}
+    .instructions-list strong {{ color: var(--accent); }}
+    .instructions-list a {{ color: var(--cyan); text-decoration: none; }}
+    .instructions-list a:hover {{ text-decoration: underline; }}
+    .note {{
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-2);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }}
     footer {{
       text-align: center;
       padding: 2rem;
@@ -1167,9 +1240,9 @@ def build_index_html(
 <body>
   <div class="page">
     <header class="hero">
-      <div class="badge">Tesla Owners UK · Live</div>
+      <div class="badge">Tesla Owners UK · Live Calendar</div>
       <h1>Events Calendar</h1>
-      <p class="tagline">Subscribe to Tesla Owners UK events. Track days, meetups, AGMs and more.</p>
+      <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 {health_html}
     <section class="card">
@@ -1191,20 +1264,87 @@ def build_index_html(
     </section>
 
     <section class="howto-section">
-      <h2>How to use</h2>
-      <p><strong>Google Calendar:</strong> Add other calendars → From URL → paste the calendar link.</p>
-      <p><strong>Apple Calendar:</strong> File → New Calendar Subscription → paste the URL.</p>
-      <p><strong>Outlook:</strong> Add calendar → Subscribe from web → paste the URL.</p>
+      <h2>How to subscribe</h2>
+      <p class="howto-intro">Choose your calendar app to see instructions:</p>
+
+      <div class="accordion-group">
+        <button class="accordion-button" onclick="toggleAccordion('google')" aria-expanded="false">
+          <span class="accordion-icon">📅</span>
+          <span class="accordion-title">Google Calendar</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-google">
+          <ol class="instructions-list">
+            <li>Copy the calendar URL above (click the "Subscribe to calendar" button)</li>
+            <li>Open <a href="https://calendar.google.com" target="_blank" rel="noopener">Google Calendar</a></li>
+            <li>On the left sidebar, click the <strong>+</strong> next to "Other calendars"</li>
+            <li>Select <strong>"From URL"</strong></li>
+            <li>Paste the calendar URL and click <strong>Add calendar</strong></li>
+          </ol>
+          <p class="note">💡 Tip: On Android, the subscribe button will open Google Calendar automatically</p>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('apple')" aria-expanded="false">
+          <span class="accordion-icon">🍎</span>
+          <span class="accordion-title">Apple Calendar (iPhone/iPad/Mac)</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-apple">
+          <ol class="instructions-list">
+            <li>On iPhone/iPad, tap the "Subscribe to calendar" button above</li>
+            <li>Your device will automatically open Calendar and prompt to subscribe</li>
+            <li>Tap <strong>Subscribe</strong> to add the calendar</li>
+          </ol>
+          <p class="note"><strong>On Mac:</strong></p>
+          <ol class="instructions-list">
+            <li>Click the "Subscribe to calendar" button (it will use webcal:// protocol)</li>
+            <li>Or manually: File → New Calendar Subscription → paste the URL</li>
+          </ol>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('outlook')" aria-expanded="false">
+          <span class="accordion-icon">📧</span>
+          <span class="accordion-title">Outlook</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-outlook">
+          <ol class="instructions-list">
+            <li>Copy the calendar URL above</li>
+            <li>Open <a href="https://outlook.live.com/calendar" target="_blank" rel="noopener">Outlook Calendar</a></li>
+            <li>Click <strong>Add calendar</strong></li>
+            <li>Select <strong>"Subscribe from web"</strong></li>
+            <li>Paste the calendar URL and click <strong>Import</strong></li>
+          </ol>
+        </div>
+
+        <button class="accordion-button" onclick="toggleAccordion('other')" aria-expanded="false">
+          <span class="accordion-icon">🗓️</span>
+          <span class="accordion-title">Other Calendar Apps</span>
+          <span class="accordion-chevron">▼</span>
+        </button>
+        <div class="accordion-content" id="accordion-other">
+          <p>Most calendar applications support iCalendar (.ics) subscriptions:</p>
+          <ol class="instructions-list">
+            <li>Copy the calendar URL from the "Subscribe to calendar" button</li>
+            <li>Look for "Add calendar," "Subscribe," or "Import" in your calendar app</li>
+            <li>Choose "From URL" or "Web calendar" option</li>
+            <li>Paste the calendar URL</li>
+          </ol>
+          <p class="note"><strong>Compatible apps:</strong> Mozilla Thunderbird, Yahoo Calendar, CalDAV-compatible apps, and more</p>
+        </div>
+      </div>
+
+      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added — no need to re-subscribe!</p>
     </section>
 
     <footer>
-      <p>Fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
+      <p>An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
-        <a href="archive.html">Event Archive</a>
+        <a href="archive.html">📁 Event Archive</a>
         <span aria-hidden="true"> · </span>
-        <a href="https://teslaowners.org.uk/events">Tesla Owners UK Events</a>
+        <a href="https://teslaowners.org.uk/events" target="_blank" rel="noopener">🔗 Official Events Page</a>
         <span aria-hidden="true"> · </span>
-        <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar">Source</a>
+        <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar" target="_blank" rel="noopener">⭐ GitHub</a>
       </p>
     </footer>
   </div>
@@ -1304,16 +1444,46 @@ def build_index_html(
     if (e.key === 'Escape') closeModal();
   }});
 
-  // Webcal protocol for iOS/Mac
+  // Accordion toggle
+  function toggleAccordion(id) {{
+    const button = event.currentTarget;
+    const content = document.getElementById('accordion-' + id);
+    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+    // Close all accordions
+    document.querySelectorAll('.accordion-button').forEach(btn => {{
+      btn.setAttribute('aria-expanded', 'false');
+    }});
+    document.querySelectorAll('.accordion-content').forEach(content => {{
+      content.classList.remove('active');
+    }});
+
+    // Toggle current
+    if (!isExpanded) {{
+      button.setAttribute('aria-expanded', 'true');
+      content.classList.add('active');
+    }}
+  }}
+
+  // Device-specific calendar link handling
   (function() {{
     var ua = navigator.userAgent || '';
     var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
+    var isAndroid = /Android/.test(ua);
+
     document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {{
       var href = link.getAttribute('href');
       if (!href) return;
       var abs = new URL(href, window.location.href).href;
-      if (isIOS || isMac) link.href = abs.replace(/^https?:\\/\\//, 'webcal://');
+
+      if (isIOS || isMac) {{
+        // Use webcal:// protocol for Apple devices
+        link.href = abs.replace(/^https?:\\/\\//, 'webcal://');
+      }} else if (isAndroid) {{
+        // Use Google Calendar render URL for Android
+        link.href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(abs);
+      }}
     }});
   }})();
   </script>
