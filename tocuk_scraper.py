@@ -763,6 +763,66 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def categorize_event(event: Dict[str, Any]) -> str:
+    """Categorize event by type based on title and description.
+
+    Returns:
+        Event category: 'track-day', 'meetup', 'agm', 'exhibition', 'online', 'international'
+    """
+    title = event.get("title", "").lower()
+    description = event.get("description", "").lower()
+    location = event.get("location", "").lower()
+    combined = f"{title} {description} {location}"
+
+    # Check for specific event types
+    if "agm" in title or "annual general meeting" in title:
+        return "agm"
+    elif "online" in location or "virtual" in combined or "zoom" in combined:
+        return "online"
+    elif any(word in combined for word in ["track day", "circuit", "racing"]):
+        return "track-day"
+    elif any(word in combined for word in ["everything electric", "fully charged", "exhibition", "show", "supercharged"]):
+        return "exhibition"
+    elif any(country in location for country in ["texas", "europe", "austria", "germany", "france", "spain", "italy"]):
+        return "international"
+    else:
+        return "meetup"  # Default category
+
+
+def get_event_region(event: Dict[str, Any]) -> str:
+    """Determine event region based on location.
+
+    Returns:
+        Region: 'north', 'south', 'midlands', 'online', 'international'
+    """
+    location = event.get("location", "").lower()
+
+    if "online" in location or not location:
+        return "online"
+
+    # International locations
+    if any(country in location for country in ["texas", "usa", "europe", "austria", "germany", "france", "spain", "italy", "flachau", "salzburg", "austin"]):
+        return "international"
+
+    # Northern England/Scotland
+    if any(place in location for place in ["yorkshire", "north", "newcastle", "leeds", "manchester", "liverpool", "scotland", "durham", "sedgefield", "hardwick"]):
+        return "north"
+
+    # Southern England
+    if any(place in location for place in ["london", "south", "brighton", "southampton", "kent", "surrey", "farnborough"]):
+        return "south"
+
+    # Midlands
+    if any(place in location for place in ["midlands", "birmingham", "nottingham", "leicester", "derby", "cheltenham", "gloucester"]):
+        return "midlands"
+
+    # West
+    if any(place in location for place in ["cheltenham", "bristol", "bath", "gloucester"]):
+        return "west"
+
+    return "other"
+
+
 def get_event_status(event: Dict[str, Any]) -> tuple[str, str]:
     """Determine event status and badge emoji.
 
@@ -860,6 +920,41 @@ def build_index_html(
                 upcoming_first.append(e)
         ordered = upcoming_first + past
 
+        # Calculate stats for dashboard
+        stats = {
+            "total": len(upcoming_first),
+            "next_event": None,
+            "days_until": None,
+            "popular_venue": None,
+            "avg_per_month": 0
+        }
+
+        if upcoming_first:
+            # Find next event
+            next_event = min(upcoming_first, key=lambda e: parse_iso_datetime(e.get("start_at")) or datetime.datetime.max.replace(tzinfo=datetime.timezone.utc))
+            stats["next_event"] = next_event.get("title")
+            next_date = parse_iso_datetime(next_event.get("start_at"))
+            if next_date:
+                days_until = (next_date.replace(tzinfo=datetime.timezone.utc) if next_date.tzinfo is None else next_date) - today
+                stats["days_until"] = max(0, days_until.days)
+
+            # Most popular venue
+            venues = {}
+            for e in upcoming_first:
+                loc = e.get("location", "").split(",")[0].strip()
+                if loc:
+                    venues[loc] = venues.get(loc, 0) + 1
+            if venues:
+                stats["popular_venue"] = max(venues.items(), key=lambda x: x[1])[0]
+
+            # Average events per month (last 6 months of upcoming)
+            if len(upcoming_first) >= 2:
+                first_date = parse_iso_datetime(upcoming_first[0].get("start_at"))
+                last_date = parse_iso_datetime(upcoming_first[-1].get("start_at"))
+                if first_date and last_date:
+                    months = max(1, (last_date - first_date).days / 30.44)
+                    stats["avg_per_month"] = len(upcoming_first) / months
+
         # Build event cards with full data for search/filter
         featured_items = []
         for idx, e in enumerate(ordered):
@@ -871,13 +966,29 @@ def build_index_html(
             description = strip_html(e.get("description", ""))[:200]
             slug = e.get("slug", "")
             url = f"https://teslaowners.org.uk/events/{slug}" if slug else ""
+            banner_url = e.get("banner_url", "")
             status_text, status_emoji = get_event_status(e)
+
+            # Categorize event
+            category = categorize_event(e)
+            region = get_event_region(e)
 
             # Determine if upcoming
             is_upcoming = start and (start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start) >= today
             status_badge = ""
             if is_upcoming and status_text:
                 status_badge = f'<span class="status-badge">{status_emoji} {status_text}</span>'
+
+            # Category badge
+            category_labels = {
+                "track-day": "🏁 Track Day",
+                "meetup": "🤝 Meetup",
+                "agm": "📋 AGM",
+                "exhibition": "🎪 Exhibition",
+                "online": "💻 Online",
+                "international": "🌍 International"
+            }
+            category_badge = f'<span class="category-badge {category}">{category_labels.get(category, category)}</span>'
 
             # Store event data for JavaScript
             events_json_data.append({
@@ -887,16 +998,27 @@ def build_index_html(
                 "location": location,
                 "description": description,
                 "url": url,
-                "upcoming": is_upcoming
+                "upcoming": is_upcoming,
+                "category": category,
+                "region": region,
+                "banner": banner_url
             })
 
-            # Event card with click handler
+            # Enhanced event card with optional banner image
+            banner_html = ""
+            if banner_url and banner_url.startswith("http"):
+                banner_html = f'<div class="event-banner" style="background-image: url(\'{banner_url}\')"></div>'
+
             featured_items.append(
-                f'<div class="featured-event" data-event-idx="{idx}" onclick="showEventModal({idx})">'
+                f'<div class="featured-event {category}" data-event-idx="{idx}" data-category="{category}" data-region="{region}" onclick="showEventModal({idx})">'
+                f'{banner_html}'
+                f'<div class="event-content">'
                 f'<span class="date">{date_str}</span>'
+                f'{category_badge}'
                 f'<span class="title">{title}</span>'
-                f'<span class="location-small">{location[:30]}{"..." if len(location) > 30 else ""}</span>'
+                f'<span class="location-small">📍 {location[:30]}{"..." if len(location) > 30 else ""}</span>'
                 f'{status_badge}'
+                f'</div>'
                 f"</div>"
             )
         featured_html = "\n        ".join(featured_items)
@@ -1092,17 +1214,30 @@ def build_index_html(
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 1rem;
-      font-size: 0.9rem;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
       cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     }}
     .featured-event:hover {{
       transform: translateY(-2px);
       border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
+    }}
+    .event-banner {{
+      width: 100%;
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--surface-2);
+    }}
+    .event-content {{
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
     }}
     .featured-event .date {{
       font-size: 0.75rem;
@@ -1113,6 +1248,7 @@ def build_index_html(
     .featured-event .title {{
       font-weight: 500;
       line-height: 1.3;
+      margin: 0.25rem 0;
     }}
     .featured-event .location-small {{
       font-size: 0.75rem;
@@ -1129,7 +1265,158 @@ def build_index_html(
       margin-top: 0.25rem;
       width: fit-content;
     }}
+    .category-badge {{
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      width: fit-content;
+      display: inline-block;
+    }}
+    .category-badge.track-day {{ background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.4); }}
+    .category-badge.meetup {{ background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }}
+    .category-badge.agm {{ background: rgba(10, 132, 255, 0.2); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.4); }}
+    .category-badge.exhibition {{ background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.4); }}
+    .category-badge.online {{ background: rgba(94, 92, 230, 0.2); color: #5e5ce6; border: 1px solid rgba(94, 92, 230, 0.4); }}
+    .category-badge.international {{ background: rgba(191, 90, 242, 0.2); color: #bf5af2; border: 1px solid rgba(191, 90, 242, 0.4); }}
     .featured-event.hidden {{ display: none; }}
+    .stats-dashboard {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }}
+    .stat-card {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      text-align: center;
+    }}
+    .stat-card-wide {{
+      grid-column: span 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      text-align: left;
+    }}
+    .stat-number {{
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }}
+    .stat-label {{
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+    .stat-icon {{ font-size: 2.5rem; }}
+    .stat-venue {{
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }}
+    .stat-venue-label {{
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+    .quick-add-buttons {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }}
+    .btn {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }}
+    .btn-primary {{
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+    }}
+    .btn-secondary {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }}
+    .btn:hover {{
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    }}
+    .subscribe-hint {{
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+    }}
+    .filter-section {{
+      margin: 2rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }}
+    .filter-group {{
+      margin-bottom: 1.5rem;
+    }}
+    .filter-group:last-child {{ margin-bottom: 0; }}
+    .filter-label {{
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }}
+    .filter-chips {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }}
+    .filter-chip {{
+      padding: 0.5rem 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+      font-family: inherit;
+    }}
+    .filter-chip:hover {{
+      background: var(--surface);
+      border-color: var(--accent);
+    }}
+    .filter-chip.active {{
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }}
+    @media (max-width: 640px) {{
+      .stats-dashboard {{ grid-template-columns: 1fr 1fr; }}
+      .stat-card-wide {{ grid-column: span 2; }}
+      .quick-add-buttons {{ flex-direction: column; }}
+      .btn {{ width: 100%; }}
+    }}
     .health-status {{
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1245,15 +1532,75 @@ def build_index_html(
       <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 {health_html}
+    <!-- Stats Dashboard -->
+    <section class="stats-dashboard">
+      <div class="stat-card">
+        <div class="stat-number">{stats['total']}</div>
+        <div class="stat-label">Upcoming Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{stats['days_until'] if stats['days_until'] is not None else '—'}</div>
+        <div class="stat-label">Days Until Next Event</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{f"{stats['avg_per_month']:.1f}" if stats['avg_per_month'] > 0 else '—'}</div>
+        <div class="stat-label">Events Per Month</div>
+      </div>
+      <div class="stat-card stat-card-wide">
+        <div class="stat-icon">📍</div>
+        <div class="stat-info">
+          <div class="stat-venue">{stats['popular_venue'] if stats['popular_venue'] else 'Various Venues'}</div>
+          <div class="stat-venue-label">Popular Venue</div>
+        </div>
+      </div>
+    </section>
+
     <section class="card">
       <h2>Subscribe to the calendar</h2>
       <p class="meta">{count} upcoming event{'' if count == 1 else 's'}</p>
-      <a href="{ics_url}" class="btn">Subscribe to calendar</a>
+
+      <!-- Quick Add Buttons -->
+      <div class="quick-add-buttons">
+        <a href="{ics_url}" class="btn btn-primary" id="subscribeBtn">📅 Subscribe</a>
+        <a href="{ics_url}" class="btn btn-secondary" download>💾 Download .ics</a>
+        <button class="btn btn-secondary" onclick="copyCalendarURL()" title="Copy calendar URL">📋 Copy URL</button>
+      </div>
+
+      <p class="subscribe-hint">Choose "Subscribe" for automatic updates, or "Download" for a one-time import</p>
     </section>
 
     <div class="controls">
       <input type="text" class="search-box" id="searchBox" placeholder="Search events by title or location..." onkeyup="filterEvents()">
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌓</button>
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-section">
+      <div class="filter-group">
+        <label class="filter-label">Event Type:</label>
+        <div class="filter-chips" id="categoryFilters">
+          <button class="filter-chip active" data-category="all" onclick="filterByCategory('all')">All Events</button>
+          <button class="filter-chip" data-category="track-day" onclick="filterByCategory('track-day')">🏁 Track Days</button>
+          <button class="filter-chip" data-category="meetup" onclick="filterByCategory('meetup')">🤝 Meetups</button>
+          <button class="filter-chip" data-category="agm" onclick="filterByCategory('agm')">📋 AGMs</button>
+          <button class="filter-chip" data-category="exhibition" onclick="filterByCategory('exhibition')">🎪 Exhibitions</button>
+          <button class="filter-chip" data-category="online" onclick="filterByCategory('online')">💻 Online</button>
+          <button class="filter-chip" data-category="international" onclick="filterByCategory('international')">🌍 International</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Region:</label>
+        <div class="filter-chips" id="regionFilters">
+          <button class="filter-chip active" data-region="all" onclick="filterByRegion('all')">All Regions</button>
+          <button class="filter-chip" data-region="north" onclick="filterByRegion('north')">⬆️ North</button>
+          <button class="filter-chip" data-region="south" onclick="filterByRegion('south')">⬇️ South</button>
+          <button class="filter-chip" data-region="midlands" onclick="filterByRegion('midlands')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Midlands</button>
+          <button class="filter-chip" data-region="west" onclick="filterByRegion('west')">⬅️ West</button>
+          <button class="filter-chip" data-region="online" onclick="filterByRegion('online')">💻 Online</button>
+          <button class="filter-chip" data-region="international" onclick="filterByRegion('international')">🌍 International</button>
+        </div>
+      </div>
     </div>
 
     <section class="featured-section">
@@ -1383,6 +1730,10 @@ def build_index_html(
     document.documentElement.setAttribute('data-theme', savedTheme);
   }})();
 
+  // Filter state
+  let activeCategory = 'all';
+  let activeRegion = 'all';
+
   // Filter events
   function filterEvents() {{
     const searchTerm = document.getElementById('searchBox').value.toLowerCase();
@@ -1396,7 +1747,10 @@ def build_index_html(
         event.location.toLowerCase().includes(searchTerm) ||
         event.description.toLowerCase().includes(searchTerm);
 
-      if (matchesSearch) {{
+      const matchesCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
+      const matchesRegion = activeRegion === 'all' || card.dataset.region === activeRegion;
+
+      if (matchesSearch && matchesCategory && matchesRegion) {{
         card.classList.remove('hidden');
         visibleCount++;
       }} else {{
@@ -1406,7 +1760,7 @@ def build_index_html(
 
     // Update count
     const countSpan = document.getElementById('eventCount');
-    if (searchTerm) {{
+    if (searchTerm || activeCategory !== 'all' || activeRegion !== 'all') {{
       countSpan.textContent = `({{visibleCount}} shown)`;
     }} else {{
       countSpan.textContent = '';
@@ -1463,6 +1817,58 @@ def build_index_html(
       button.setAttribute('aria-expanded', 'true');
       content.classList.add('active');
     }}
+  }}
+
+  // Copy calendar URL to clipboard
+  function copyCalendarURL() {{
+    const calendarURL = window.location.origin + '/tesla-owners-club-uk-events-calendar/tocuk.ics';
+    navigator.clipboard.writeText(calendarURL).then(() => {{
+      const btn = event.currentTarget;
+      const originalText = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(34, 197, 94, 0.2)';
+      btn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      setTimeout(() => {{
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }}, 2000);
+    }}).catch(err => {{
+      console.error('Failed to copy:', err);
+      alert('Failed to copy URL. Please copy manually: ' + calendarURL);
+    }});
+  }}
+
+  // Filter by category
+  function filterByCategory(category) {{
+    activeCategory = category;
+
+    // Update chip styles
+    document.querySelectorAll('.filter-chip[data-category]').forEach(chip => {{
+      if (chip.dataset.category === category) {{
+        chip.classList.add('active');
+      }} else {{
+        chip.classList.remove('active');
+      }}
+    }});
+
+    filterEvents();
+  }}
+
+  // Filter by region
+  function filterByRegion(region) {{
+    activeRegion = region;
+
+    // Update chip styles
+    document.querySelectorAll('.filter-chip[data-region]').forEach(chip => {{
+      if (chip.dataset.region === region) {{
+        chip.classList.add('active');
+      }} else {{
+        chip.classList.remove('active');
+      }}
+    }});
+
+    filterEvents();
   }}
 
   // Device-specific calendar link handling
