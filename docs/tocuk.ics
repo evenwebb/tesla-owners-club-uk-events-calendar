@@ -1,0 +1,332 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Tesla Owners UK//Events Calendar//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Tesla Owners UK Events
+X-WR-CALDESC:Upcoming events from Tesla Owners UK
+BEGIN:VEVENT
+UID:1103557@teslaowners.org.uk
+DTSTAMP:20250219T135748Z
+DTSTART:20210903T000000Z
+DTEND:20210903T010000Z
+SUMMARY:Tesla Owners UK @ Fully Charged Live - Show Cars
+DESCRIPTION:Show your car with Tesla Owners UK.\n\nWhen: September 3rd–June
+  6th, 2021\nTimezone: UTC\n\nEvent details: https://teslaowners.org.uk/eve
+ nts/fully-charged-live-outside-show-cars\n\nBook tickets: https://ti.to/te
+ slaownersuk/fully-charged-live-outside-show-cars\n\nMap/directions: https:
+ //www.google.com/maps?q=51.2755416,-0.76105\n\n0 registration(s) | 0 ticke
+ t(s)\n\nTesla Owners UK event – https://teslaowners.org.uk/events
+CREATED:20210604T151049Z
+LAST-MODIFIED:20250219T135748Z
+LOCATION:Farnborough International
+GEO:51.2755416;-0.76105
+URL:https://teslaowners.org.uk/events/fully-charged-live-outside-show-cars
+ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: September 3rd–June 6th, 2021
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103557/7c958e3e087f3f0f4e5e98cdffdcf2a5.jpg
+RESOURCES:Farnborough International
+X-TIMEZONE:UTC
+X-EVENT-ID:1103557
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1103968@teslaowners.org.uk
+DTSTAMP:20250219T135748Z
+DTSTART:20210903T000000Z
+DTEND:20210903T010000Z
+SUMMARY:TEST - Fully Charged Live Outside
+DESCRIPTION:Fully Charged Live Outside\n\nWhen: September 3rd–June 6th, 202
+ 1\nTimezone: UTC\n\nEvent details: https://teslaowners.org.uk/events/test-
+ fully-charged-live\n\nBook tickets: https://ti.to/teslaownersuk/test-fully
+ -charged-live\n\nTickets:\n  • Display Ticket: £0\n\n0 registration(s) | 0
+  ticket(s)\n\nTesla Owners UK event – https://teslaowners.org.uk/events
+CREATED:20210615T202135Z
+LAST-MODIFIED:20250219T135748Z
+LOCATION:Farnborough International
+URL:https://teslaowners.org.uk/events/test-fully-charged-live
+ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: September 3rd–June 6th, 2021
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1103968/a3ebf0a648635c61265622177ea04e24.jpg
+RESOURCES:Farnborough International
+X-TIMEZONE:UTC
+X-EVENT-ID:1103968
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1158338@teslaowners.org.uk
+DTSTAMP:20260205T015207Z
+DTSTART:20260316T173000Z
+DTEND:20260316T193000Z
+SUMMARY:Giga Texas 2026
+DESCRIPTION:A very special opportunity for our Supporter Members of Tesla O
+ wners UK. We have a limited number of tickets for a unique opportunity to 
+ see the Tesla Giga Factory in Austin Texas. The visit is in **Monday 16 Ma
+ rch** at noon, and we have a Tesla Owners UK reception in Austin downtown 
+ on the evening of Sunday 15 March. An invitation to sign up for tickets wi
+ ll be sent direct to members. Please make sure your membership is up to da
+ te to ensure youre able to participate in this trip. Visitors will be resp
+ onsible for their own transportation such as flights, esta/visa, accommoda
+ tion, transfers and any reception gratuities. Also, in the spirit of the T
+ esla Cyber Rodeo launch of Giga Texas, the Rodeo Austin is in town that we
+ ek, with top class rodeo, a huge county fair and live music. This is not p
+ art of the Tesla visit but may be something you'd want to work into your v
+ isit to Austin.\n\nWhen: March 16th, 2026\nTimezone: Mountain Time (US & C
+ anada)\n\nWe look forward to seeing you in Austin Texas!\n\nEvent details:
+  https://teslaowners.org.uk/events/giga-texas-2026\n\nBook tickets: https:
+ //ti.to/teslaownersuk/giga-texas-2026\n\nMap/directions: https://www.googl
+ e.com/maps?q=30.2248156,-97.619548\n\nTickets:\n  • Giga Texas Factory Vis
+ it 2026: £125\n  • Giga Texas Visit 2026: £125\n  • Reception Only Ticket:
+  £100\n\n24 registration(s) | 32 ticket(s)\n\nTesla Owners UK event – http
+ s://teslaowners.org.uk/events
+CREATED:20260122T233749Z
+LAST-MODIFIED:20260205T015207Z
+LOCATION:Austin, Texas
+GEO:30.2248156;-97.619548
+URL:https://teslaowners.org.uk/events/giga-texas-2026
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: Mountain Time (US & Canada)
+COMMENT:Date: March 16th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1158338/e15893d9403b3203ed698292cea04742.png
+RESOURCES:Austin, Texas
+X-TIMEZONE:Mountain Time (US & Canada)
+X-EVENT-ID:1158338
+X-TICKETS-COUNT:32
+X-REGISTRATIONS-COUNT:24
+END:VEVENT
+BEGIN:VEVENT
+UID:1157348@teslaowners.org.uk
+DTSTAMP:20260103T131129Z
+DTSTART:20260328T103000Z
+DTEND:20260328T113000Z
+SUMMARY:Annual General Meeting
+DESCRIPTION:The 2026 AGM for Tesla Owners UK will be online. Details will b
+ e issued to all paid up supporters prior to the meeting.\n\nWhen: March 28
+ th, 2026\nTimezone: UTC\n\nEvent details: https://teslaowners.org.uk/event
+ s/annual-general-meeting\n\nBook tickets: https://ti.to/teslaownersuk/annu
+ al-general-meeting\n\n0 registration(s) | 0 ticket(s)\n\nTesla Owners UK e
+ vent – https://teslaowners.org.uk/events
+CREATED:20251216T172809Z
+LAST-MODIFIED:20260103T131129Z
+LOCATION:Online
+URL:https://teslaowners.org.uk/events/annual-general-meeting
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: March 28th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157348/525455817103646cd5a6f5b910553ac4.png
+RESOURCES:Online
+X-TIMEZONE:UTC
+X-EVENT-ID:1157348
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1156206@teslaowners.org.uk
+DTSTAMP:20251105T152414Z
+DTSTART:20260508T100000Z
+DTEND:20260509T170000Z
+SUMMARY:Everything Electric - North
+DESCRIPTION:Everything Electric North is at the Yorkshire Event Centre on 8
+  and 9 May 2026 for a fun-filled festival of electrification. We don't kno
+ w what our club presence is going to be as yet, but if you would like to b
+ e involved and volunteer for this event, please contact president@teslaown
+ ers.org.uk with your details. Find out more details on the Everything Elec
+ tric website.\n\nWhen: May 8th–9th, 2026\nTimezone: UTC\n\nEvent details: 
+ https://teslaowners.org.uk/events/fully-charged-south-2025-copy\n\nBook ti
+ ckets: https://ti.to/teslaownersuk/fully-charged-south-2025-copy\n\nMap/di
+ rections: https://www.google.com/maps?q=51.2755416,-0.7610499999999999\n\n
+ 0 registration(s) | 0 ticket(s)\n\nTesla Owners UK event – https://teslaow
+ ners.org.uk/events
+CREATED:20251105T151500Z
+LAST-MODIFIED:20251105T152414Z
+LOCATION:Yorkshire Event Centre
+GEO:51.2755416;-0.7610499999999999
+URL:https://teslaowners.org.uk/events/fully-charged-south-2025-copy
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: May 8th–9th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1156206/9e1fc4521aee8eb4bb7f39ad8a7ae359.jpeg
+RESOURCES:Yorkshire Event Centre
+X-TIMEZONE:UTC
+X-EVENT-ID:1156206
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1157702@teslaowners.org.uk
+DTSTAMP:20260103T135615Z
+DTSTART:20260531T100000Z
+DTEND:20260531T170000Z
+SUMMARY:Tesla Owners at Smiles for Miles 2026
+DESCRIPTION:Join fellow Tesla Owners for a fun day out with this regional e
+ vent at Hardwick Hall and have an action-packed day of Inclusive automotiv
+ e excitement while raising funds for **JPC Community Hub CIC**, now proudl
+ y based at the **TAD Centre, Middlesbrough**. JPC Community Hub continues 
+ its mission to support individuals with special and complex needs, live in
+ dependently and your participation helps make that possible. The Smiles fo
+ r Miles theme returns for 2026, featuring an impressive range of **Prestig
+ e, Sports, and Supercars** on display. Guests can enjoy the atmosphere on-
+ site or take part in **Passenger Ride Experiences** along a pre-selected r
+ oute off-site. Display tickets can be bought directly from the organisers:
+  Click here to get your ticket ( scroll down and select "Teeside Tesla") *
+ *Event highlights** Hundreds of performance cars on display Sports & Super
+ car passenger rides Special guests This event raises vital community funds
+  **Passenger Ride Experiences** Fancy being a passenger in a performance, 
+ sports or supercar? Now’s your chance to enjoy a 5 mile drive (off-site) o
+ n a pre-selected route. You’ll have the opportunity to ride shotgun in a w
+ ide selection of performance cars, including the likes of Ferrari, Porsche
+ , McLaren, Lamborghini and Aston Martin – to name but a few. Passenger rid
+ es start from £25 and are available to book right now (see below) – and th
+ e best bit, it’s all for a good cause and it’s an inclusive family event. 
+ Places are limited for the passenger rides experiences of around 75 per ho
+ ur. Starting at 10am with last rides at 4pm. Please note, there is age res
+ triction of 8+. Booster seats are available. Tickets are direct from the o
+ rganiser. Standard Prices: Family Ticket 2 Adults & 2 Children (Under 16 y
+ ears old) for £35. Adults £15 / Children (Under 16 years old) £5. VIP Park
+ ing £25 (There is limited availability). There is also offsite parking opp
+ osite Hardwick Park from £5.\n\nWhen: May 31st, 2026\nTimezone: UTC\n\nEve
+ nt details: https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-m
+ iles-2026\n\nBook tickets: https://ti.to/teslaownersuk/tesla-owners-at-smi
+ les-for-miles-2026\n\nEvent website: https://www.jpcspecialistmotorsports.
+ com/events/smiles-for-miles-hardwick-hall/\n\nMap/directions: https://www.
+ google.com/maps?q=54.6555788,-1.4656777\n\n0 registration(s) | 0 ticket(s)
+ \n\nTesla Owners UK event – https://teslaowners.org.uk/events
+CREATED:20260103T132204Z
+LAST-MODIFIED:20260103T135615Z
+LOCATION:Hardwick Hall, Sedgfield
+GEO:54.6555788;-1.4656777
+URL:https://teslaowners.org.uk/events/tesla-owners-at-smiles-for-miles-2026
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: May 31st, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157702/2e1a101a10c3fd4ccfb3f5ce7f13baa9.png
+RESOURCES:Hardwick Hall, Sedgfield
+X-TIMEZONE:UTC
+X-EVENT-ID:1157702
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1157349@teslaowners.org.uk
+DTSTAMP:20251230T152840Z
+DTSTART:20260605T000000Z
+DTEND:20260606T000000Z
+SUMMARY:Tesla Takeover Europe '26
+DESCRIPTION:Our friends at Tesla Owners Austria are hosting the Tesla Take 
+ Over Europe '26 in Flachau. Tesla Owners UK will be in attendance and welc
+ ome members to make a road trip of it to take part in a wide range of even
+ ts. Please note that this is not organised by TOUK and tickets will be ava
+ ilable direct from Tesla Owners Austria from 6 February 2026.\n\nWhen: Jun
+ e 5th–6th, 2026\nTimezone: UTC\n\nEvent details: https://teslaowners.org.u
+ k/events/tesla-takeover-europe-26\n\nBook tickets: https://ti.to/teslaowne
+ rsuk/tesla-takeover-europe-26\n\nEvent website: https://www.teslatakeover.
+ eu/launch\n\nMap/directions: https://www.google.com/maps?q=47.3414833,13.3
+ 909059\n\n0 registration(s) | 0 ticket(s)\n\nTesla Owners UK event – https
+ ://teslaowners.org.uk/events
+CREATED:20251216T173428Z
+LAST-MODIFIED:20251230T152840Z
+LOCATION:Flachau / Salzburg
+GEO:47.3414833;13.3909059
+URL:https://teslaowners.org.uk/events/tesla-takeover-europe-26
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: June 5th–6th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157349/138517ca18f86b88c07ed009e2d5b38d.jpeg
+RESOURCES:Flachau / Salzburg
+X-TIMEZONE:UTC
+X-EVENT-ID:1157349
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1157350@teslaowners.org.uk
+DTSTAMP:20251216T175556Z
+DTSTART:20260612T000000Z
+DTEND:20260613T000000Z
+SUMMARY:Everything Electric West
+DESCRIPTION:Everything Electric is coming to Cheltenham for the first time 
+ in 2026. We will update this save the date when we know what form our TOUK
+  presence will be.\n\nWhen: June 12th–13th, 2026\nTimezone: UTC\n\nEvent d
+ etails: https://teslaowners.org.uk/events/everything-electric-west\n\nBook
+  tickets: https://ti.to/teslaownersuk/everything-electric-west\n\nMap/dire
+ ctions: https://www.google.com/maps?q=51.919184,-2.0687983\n\n0 registrati
+ on(s) | 0 ticket(s)\n\nTesla Owners UK event – https://teslaowners.org.uk/
+ events
+CREATED:20251216T175158Z
+LAST-MODIFIED:20251216T175556Z
+LOCATION:Cheltenham Racecourse
+GEO:51.919184;-2.0687983
+URL:https://teslaowners.org.uk/events/everything-electric-west
+ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: June 12th–13th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg
+RESOURCES:Cheltenham Racecourse
+X-TIMEZONE:UTC
+X-EVENT-ID:1157350
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+BEGIN:VEVENT
+UID:1157347@teslaowners.org.uk
+DTSTAMP:20260122T160752Z
+DTSTART:20260627T100000Z
+DTEND:20260627T170000Z
+SUMMARY:Supercharged 2026
+DESCRIPTION:The 2026 edition of the Tesla Owners UK national member event w
+ ill be bigger and better, with more driving opportunities and a new locati
+ on to enjoy. Details will be announced in early 2026. Entry to Supercharge
+ d is free for our paid supporters, and payable for free and non-members. T
+ ickets will be available soon, and will be a family friendly event. If you
+  would like your business to take part, please note that priority will be 
+ given to our TOUK partners. If you own an electric mobile food and/or drin
+ k van or trailer, do get in touch as we want to widen our food offering fo
+ r 2026.\n\nWhen: June 27th, 2026\nTimezone: UTC\n\nEvent details: https://
+ teslaowners.org.uk/events/supercharged-2026\n\nBook tickets: https://ti.to
+ /teslaownersuk/supercharged-2026\n\n0 registration(s) | 0 ticket(s)\n\nTes
+ la Owners UK event – https://teslaowners.org.uk/events
+CREATED:20251216T171953Z
+LAST-MODIFIED:20260122T160752Z
+LOCATION:Somewhere between London and Birmingham 
+URL:https://teslaowners.org.uk/events/supercharged-2026
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: UTC
+COMMENT:Date: June 27th, 2026
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+STATUS:CONFIRMED
+ATTACH:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/
+RESOURCES:Somewhere between London and Birmingham 
+X-TIMEZONE:UTC
+X-EVENT-ID:1157347
+X-TICKETS-COUNT:0
+X-REGISTRATIONS-COUNT:0
+END:VEVENT
+END:VCALENDAR

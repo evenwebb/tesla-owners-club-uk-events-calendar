@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+tocuk_log.txt
+.tocuk_event_cache.json
+.env

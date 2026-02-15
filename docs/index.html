@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tesla Owners UK – Events Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a24;
+      --border: rgba(0,212,255,0.25);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --cyan: #00d4ff;
+      --red: #e53935;
+      --accent: #00d4ff;
+      --accent-dim: rgba(0,212,255,0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+    }
+    .hero .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .hero .tagline { color: var(--text-muted); font-size: 1rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .card .meta { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .card .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card .btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+    }
+    .featured-section { margin: 3rem 0; }
+    .featured-section h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .featured-event {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-size: 0.9rem;
+    }
+    .featured-event .date {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .howto-section { margin: 3rem 0; }
+    .howto-section h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .howto-section p { color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.95rem; }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 3rem;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="badge">Tesla Owners UK · Live</div>
+      <h1>Events Calendar</h1>
+      <p class="tagline">Subscribe to Tesla Owners UK events. Track days, meetups, AGMs and more.</p>
+    </header>
+
+    <section class="card">
+      <h2>Subscribe to the calendar</h2>
+      <p class="meta">7 upcoming events</p>
+      <a href="tocuk.ics" class="btn">Subscribe to calendar</a>
+    </section>
+
+    <section class="featured-section">
+      <h2>Upcoming events</h2>
+      <div class="featured-grid">
+        <div class="featured-event"><span class="date">16 Mar 2026</span>Giga Texas 2026</div>
+        <div class="featured-event"><span class="date">28 Mar 2026</span>Annual General Meeting</div>
+        <div class="featured-event"><span class="date">08 May 2026</span>Everything Electric - North</div>
+        <div class="featured-event"><span class="date">31 May 2026</span>Tesla Owners at Smiles for Miles 2026</div>
+        <div class="featured-event"><span class="date">05 Jun 2026</span>Tesla Takeover Europe '26</div>
+        <div class="featured-event"><span class="date">12 Jun 2026</span>Everything Electric West</div>
+        <div class="featured-event"><span class="date">27 Jun 2026</span>Supercharged 2026</div>
+        <div class="featured-event"><span class="date">03 Sep 2021</span>Tesla Owners UK @ Fully Charged Live - Show Cars</div>
+      </div>
+    </section>
+
+    <section class="howto-section">
+      <h2>How to use</h2>
+      <p><strong>Google Calendar:</strong> Add other calendars → From URL → paste the calendar link.</p>
+      <p><strong>Apple Calendar:</strong> File → New Calendar Subscription → paste the URL.</p>
+      <p><strong>Outlook:</strong> Add calendar → Subscribe from web → paste the URL.</p>
+    </section>
+
+    <footer>
+      <p>Fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
+      <p style="margin-top: 0.5rem;">
+        <a href="https://teslaowners.org.uk/events">Tesla Owners UK Events</a>
+        <span aria-hidden="true"> · </span>
+        <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar">Source</a>
+      </p>
+    </footer>
+  </div>
+  <script>
+  (function() {
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
+    document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {
+      var href = link.getAttribute('href');
+      if (!href) return;
+      var abs = new URL(href, window.location.href).href;
+      if (isIOS || isMac) link.href = abs.replace(/^https?:\/\//, 'webcal://');
+    });
+  })();
+  </script>
+</body>
+</html>
