@@ -1,7 +1,7 @@
 {
-  "status": "success",
-  "last_update": "2026-04-06T10:07:30.903540+00:00",
-  "event_count": 5,
-  "message": "No new events detected (5 upcoming events)",
-  "error": null
+  "status": "error",
+  "last_update": "2026-04-13T10:42:57.968215+00:00",
+  "event_count": 0,
+  "message": "No events found on website",
+  "error": "Event extraction returned empty list"
 }
