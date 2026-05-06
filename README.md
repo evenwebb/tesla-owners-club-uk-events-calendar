@@ -2,7 +2,7 @@
   <strong>🚗 Tesla Owners UK Events Calendar</strong>
 </p>
 <p align="center">
-  <em>iCalendar feed for Tesla Owners UK events — track days, meetups, AGMs and more</em>
+  <em>iCalendar feed for Tesla Owners UK events: track days, meetups, AGMs, and more</em>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
   <a href="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/"><strong>📅 Subscribe to the calendar →</strong></a>
 </p>
 
-> **Just want the events?** Visit the link above to add Tesla Owners UK events to Google Calendar, Apple Calendar, or Outlook. No code required — one click to subscribe.
+> **Just want the events?** Visit the link above to add Tesla Owners UK events to Google Calendar, Apple Calendar, or Outlook. No code required: one click to subscribe.
 
 ---
 
@@ -36,7 +36,7 @@
 
 ## 📅 Subscribe to the Calendar
 
-**Add Tesla Owners UK events to your calendar — no installation, no code.**
+**Add Tesla Owners UK events to your calendar: no installation, no code.**
 
 | Calendar | How to add |
 |----------|------------|
@@ -71,7 +71,7 @@ Output is written to `docs/`. For a hosted calendar, see [Subscribe to the Calen
 | 📜 **Archive** | Past events on `archive.html`; subscribe feed is **upcoming-only** |
 | ⚡ **Resilient fetch** | Retries on HTTP errors; optional local detail cache when developing |
 | 🔄 **Sources** | List: `checkout.tito.io/teslaownersuk.json`; detail: per-event `?format=ics` |
-| 🔔 **Reminders** | Off by default (`NOTIFICATIONS.enabled = False`) — no `VALARM` in the feed |
+| 🔔 **Reminders** | Off by default (`NOTIFICATIONS.enabled = False`); no `VALARM` in the feed |
 
 ---
 
@@ -164,10 +164,10 @@ flowchart LR
     D --> E[Save state]
 ```
 
-1. **List** — `GET https://checkout.tito.io/teslaownersuk.json` → slugs, titles, human dates, locations, `banner_url`, public URLs
-2. **Detail** — `GET https://checkout.tito.io/teslaownersuk/{slug}?format=ics` → `DTSTART`/`DTEND`, description, location, UID, cancellation, organizer, optional `GEO`
-3. **Generate** — RFC 5545 calendar (**upcoming only** in the `.ics`), `index.html`, `archive.html`, JSON-LD
-4. **Save** — Commits `docs/` from Actions when outputs change
+1. **List:** `GET https://checkout.tito.io/teslaownersuk.json` → slugs, titles, human dates, locations, `banner_url`, public URLs
+2. **Detail:** `GET https://checkout.tito.io/teslaownersuk/{slug}?format=ics` → `DTSTART`/`DTEND`, description, location, UID, cancellation, organizer, optional `GEO`
+3. **Generate:** RFC 5545 calendar (**upcoming only** in the `.ics`), `index.html`, `archive.html`, JSON-LD
+4. **Save:** Commits `docs/` from Actions when outputs change
 
 ---
 
@@ -176,9 +176,9 @@ flowchart LR
 ```
 ✓ Created docs/ with tocuk.ics (7 events), index.html, and archive.html
 
-  • Giga Texas 2026 – 16 March 2026 11:30 @ Austin, Texas
-  • Annual General Meeting – 28 March 2026 10:30 @ Online
-  • Everything Electric - North – 08 May 2026 10:00 @ Yorkshire Event Centre
+  • Giga Texas 2026, 16 March 2026 11:30 @ Austin, Texas
+  • Annual General Meeting, 28 March 2026 10:30 @ Online
+  • Everything Electric - North, 08 May 2026 10:00 @ Yorkshire Event Centre
   ...
 ```
 
@@ -186,7 +186,7 @@ flowchart LR
 
 ## 📜 License & Disclaimer
 
-This project is licensed under the **GPL-3.0** License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GPL-3.0** License; see the [LICENSE](LICENSE) file for details.
 
 > **Disclaimer:** This is a fan-made project. Not affiliated with Tesla Owners UK Limited. Event data is taken from Ti.to’s public JSON and ICS endpoints; use subject to [Ti.to](https://ti.to/)’s terms.
 
