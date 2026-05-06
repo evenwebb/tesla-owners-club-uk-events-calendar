@@ -1,10 +1,13 @@
 {
-  "slugs": [
-    "fully-charged-south-2025-copy",
-    "tesla-owners-at-smiles-for-miles-2026",
-    "everything-electric-west",
-    "tesla-takeover-europe-26",
-    "supercharged-2026"
-  ],
-  "updated": "2026-04-06T10:07:30.903299"
+  "version": 2,
+  "upcoming": {
+    "everything-electric-west": "2026-06-11T23:00:00+00:00\u001f2026-06-13T23:00:00+00:00\u001fCheltenham Racecourse\u001f0",
+    "fully-charged-south-2025-copy": "2026-05-08T09:00:00+00:00\u001f2026-05-09T16:00:00+00:00\u001fYorkshire Event Centre\u001f0",
+    "supercharged-2026": "2026-06-27T09:00:00+00:00\u001f2026-06-27T16:00:00+00:00\u001fMillbrook Proving Ground, Bedfordshire\u001f0",
+    "tesla-gigafactory-berlin-tour-2026": "2026-10-19T10:30:00+00:00\u001f2026-10-19T12:30:00+00:00\u001fTesla Gigafactory Berlin-Brandenburg\u001f0",
+    "tesla-owners-at-smiles-for-miles-2026": "2026-05-31T09:00:00+00:00\u001f2026-05-31T16:00:00+00:00\u001fHardwick Hall, Sedgfield\u001f0",
+    "tesla-owners-at-the-british-motor-show-2026": "2026-08-20T23:00:00+00:00\u001f2026-08-23T23:00:00+00:00\u001fFarnbrorough\u001f0",
+    "tesla-takeover-europe-26": "2026-06-04T23:00:00+00:00\u001f2026-06-06T23:00:00+00:00\u001fFlachau / Salzburg\u001f0"
+  },
+  "updated": "2026-05-06T22:03:05.483379+00:00"
 }

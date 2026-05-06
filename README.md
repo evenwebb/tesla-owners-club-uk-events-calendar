@@ -65,13 +65,13 @@ Output is written to `docs/`. For a hosted calendar, see [Subscribe to the Calen
 
 | Feature | Description |
 |--------|-------------|
-| 📅 **Full event data** | Title, description, location, times, ticket info, map coordinates |
-| 🌍 **Timezone-aware** | Events in different timezones (e.g. Giga Texas) correctly converted to UTC |
-| 📍 **RFC 5545 iCal** | Standards-compliant output with UID, GEO, ORGANIZER, ATTACH, etc. |
-| 📜 **Past + upcoming** | Keeps all events (past and future) in the calendar |
-| ⚡ **GitHub-optimised** | Skips full scrape when no new events; retries on transient failures |
-| 🔄 **Detail enrichment** | Fetches each event page for richer descriptions, map links, ticket prices |
-| 🔔 **Optional reminders** | Configurable calendar notifications (day before, day of, etc.) |
+| 📅 **Event data** | Title, description, location, start/end (from Ti.to ICS), banner image (from Ti.to list JSON) |
+| 🌍 **Timezone-aware** | Ti.to floating times interpreted as Europe/London; iCal emitted in UTC (`Z`) |
+| 📍 **RFC 5545 iCal** | UID from Ti.to, `SEQUENCE`/`DTSTAMP` persistence, `STATUS:CANCELLED` + `CANCELLED:` summary when needed |
+| 📜 **Archive** | Past events on `archive.html`; subscribe feed is **upcoming-only** |
+| ⚡ **Resilient fetch** | Retries on HTTP errors; optional local detail cache when developing |
+| 🔄 **Sources** | List: `checkout.tito.io/teslaownersuk.json`; detail: per-event `?format=ics` |
+| 🔔 **Reminders** | Off by default (`NOTIFICATIONS.enabled = False`) — no `VALARM` in the feed |
 
 ---
 
@@ -95,11 +95,10 @@ python tocuk_scraper.py
 
 The script will:
 
-1. Fetch the [Tesla Owners UK events page](https://teslaowners.org.uk/events)
-2. Extract upcoming and past events from the embedded JSON
-3. Fetch each event's detail page for full data (cached for 7 days)
-4. Write `docs/tocuk.ics` and `docs/index.html`
-5. Print a summary of events
+1. Fetch the [Ti.to checkout JSON](https://checkout.tito.io/teslaownersuk.json) for Tesla Owners UK (`teslaownersuk`)
+2. For each event, fetch [per-event ICS](https://checkout.tito.io/teslaownersuk/) (`…/{slug}?format=ics`) for accurate times and text fields
+3. Merge list + ICS, then write `docs/tocuk.ics`, `docs/index.html`, `docs/archive.html`, `sitemap.xml`, `robots.txt`
+4. Print a summary of events
 
 > **Note:** Errors are logged to `tocuk_log.txt`.
 
@@ -115,7 +114,7 @@ The workflow runs **weekly on Mondays at 09:00 UTC** and can be triggered manual
 | 2 | Run scraper (retries once on failure) |
 | 3 | Commit and push `docs/` if changed |
 
-**Streamlining:** The scraper fetches only the main page first. If there are no *new* upcoming events, it skips the full scrape (no detail fetches, no file writes) to minimise GitHub Actions usage.
+Each run performs a **full refresh** (list + ICS per event) so cancellations and schedule changes always reach subscribers. State files (`docs/.ical_sequence.json`, `docs/.last_upcoming.json`) are still written for diagnostics and future use.
 
 ### GitHub Pages
 
@@ -149,6 +148,9 @@ NOTIFICATIONS = {
 |---------|--------|---------|
 | `CACHE_EXPIRY_DAYS` | 7 | How long to cache event details |
 | `FETCH_DELAY_SEC` | 0.5 | Delay between detail page requests |
+| `CALENDAR_SITE_URL` | *(see `tocuk_scraper.py`)* | Public Pages base URL for Open Graph, `sitemap.xml`, and `robots.txt` (set when you fork to another `*.github.io` path) |
+
+**Generated / state files in `docs/`:** `sitemap.xml`, `robots.txt`, `og-image.png`, `.nojekyll` (disables Jekyll on GitHub Pages), `.ical_sequence.json` (per-slug `SEQUENCE` + `DTSTAMP`), `.last_upcoming.json` (upcoming fingerprints), `.health_status.json` (last run summary).
 
 ---
 
@@ -156,29 +158,24 @@ NOTIFICATIONS = {
 
 ```mermaid
 flowchart LR
-    A[Fetch events page] --> B{New upcoming events?}
-    B -->|No| C[Skip - exit]
-    B -->|Yes| D[Fetch each event detail]
-    D --> E[Merge & enrich]
-    E --> F[Generate iCal + index]
-    F --> G[Save state]
+    A[Ti.to list JSON] --> B[Per-event ICS]
+    B --> C[Merge & enrich]
+    C --> D[iCal + HTML + SEO]
+    D --> E[Save state]
 ```
 
-1. **Fetch** — Requests `https://teslaowners.org.uk/events`
-2. **Parse** — Extracts `upcoming` and `past` from `__NEXT_DATA__` JSON (Next.js)
-3. **Check** — Compares current upcoming slugs with last run; skips if no new events
-4. **Enrich** — Fetches each event's detail page (description, GEO, tickets, etc.)
-5. **Generate** — Builds RFC 5545 iCal with UID, DTSTAMP, CREATED, ORGANIZER, GEO, ATTACH, etc.
-6. **Save** — Writes `tocuk.ics`, `index.html`, and state for next run
+1. **List** — `GET https://checkout.tito.io/teslaownersuk.json` → slugs, titles, human dates, locations, `banner_url`, public URLs
+2. **Detail** — `GET https://checkout.tito.io/teslaownersuk/{slug}?format=ics` → `DTSTART`/`DTEND`, description, location, UID, cancellation, organizer, optional `GEO`
+3. **Generate** — RFC 5545 calendar (**upcoming only** in the `.ics`), `index.html`, `archive.html`, JSON-LD
+4. **Save** — Commits `docs/` from Actions when outputs change
 
 ---
 
 ## 📄 Example Output
 
 ```
-✓ Created docs/ with tocuk.ics (9 events) and index.html
+✓ Created docs/ with tocuk.ics (7 events), index.html, and archive.html
 
-  • Tesla Owners UK @ Fully Charged Live - Show Cars – 03 September 2021 00:00 @ Farnborough International
   • Giga Texas 2026 – 16 March 2026 11:30 @ Austin, Texas
   • Annual General Meeting – 28 March 2026 10:30 @ Online
   • Everything Electric - North – 08 May 2026 10:00 @ Yorkshire Event Centre
@@ -191,12 +188,12 @@ flowchart LR
 
 This project is licensed under the **GPL-3.0** License — see the [LICENSE](LICENSE) file for details.
 
-> **Disclaimer:** This is a fan-made project. Not affiliated with Tesla Owners UK Limited. Please respect the club's website terms of service when scraping.
+> **Disclaimer:** This is a fan-made project. Not affiliated with Tesla Owners UK Limited. Event data is taken from Ti.to’s public JSON and ICS endpoints; use subject to [Ti.to](https://ti.to/)’s terms.
 
 ---
 
 <p align="center">
-  <a href="https://teslaowners.org.uk/events">Tesla Owners UK Events</a> ·
+  <a href="https://ti.to/teslaownersuk">Tesla Owners UK on Ti.to</a> ·
   <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar">Source</a> ·
   <a href="https://github.com/evenwebb">evenwebb</a>
 </p>

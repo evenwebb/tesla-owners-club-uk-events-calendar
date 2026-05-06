@@ -1,0 +1,37 @@
+{
+  "fully-charged-south-2025-copy": {
+    "seq": 0,
+    "fp": "2026-05-08T09:00:00+00:00\u001f2026-05-09T16:00:00+00:00\u001fYorkshire Event Centre\u001fEverything Electric - North\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "tesla-owners-at-smiles-for-miles-2026": {
+    "seq": 1,
+    "fp": "2026-05-31T09:00:00+00:00\u001f2026-05-31T16:00:00+00:00\u001fHardwick Hall, Sedgfield\u001fTesla Owners at Smiles for Miles 2026\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "tesla-takeover-europe-26": {
+    "seq": 0,
+    "fp": "2026-06-04T23:00:00+00:00\u001f2026-06-06T23:00:00+00:00\u001fFlachau / Salzburg\u001fTesla Takeover Europe '26\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "everything-electric-west": {
+    "seq": 0,
+    "fp": "2026-06-11T23:00:00+00:00\u001f2026-06-13T23:00:00+00:00\u001fCheltenham Racecourse\u001fEverything Electric West\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "supercharged-2026": {
+    "seq": 1,
+    "fp": "2026-06-27T09:00:00+00:00\u001f2026-06-27T16:00:00+00:00\u001fMillbrook Proving Ground, Bedfordshire\u001fSupercharged 2026\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "tesla-owners-at-the-british-motor-show-2026": {
+    "seq": 0,
+    "fp": "2026-08-20T23:00:00+00:00\u001f2026-08-23T23:00:00+00:00\u001fFarnbrorough\u001fTesla Owners at the British Motor Show 2026\u001f0",
+    "dtstamp": "20260506T220305Z"
+  },
+  "tesla-gigafactory-berlin-tour-2026": {
+    "seq": 0,
+    "fp": "2026-10-19T10:30:00+00:00\u001f2026-10-19T12:30:00+00:00\u001fTesla Gigafactory Berlin-Brandenburg\u001fTesla Gigafactory Berlin Tour 2026\u001f0",
+    "dtstamp": "20260506T220305Z"
+  }
+}

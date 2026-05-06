@@ -1,7 +1,7 @@
 {
-  "status": "error",
-  "last_update": "2026-05-04T11:04:03.314216+00:00",
-  "event_count": 0,
-  "message": "No events found on website",
-  "error": "Event extraction returned empty list"
+  "status": "success",
+  "last_update": "2026-05-06T22:03:05.483684+00:00",
+  "event_count": 7,
+  "message": "Successfully processed 7 iCal event(s) (7 upcoming on site)",
+  "error": null
 }

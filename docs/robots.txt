@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/sitemap.xml

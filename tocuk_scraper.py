@@ -1,25 +1,33 @@
 """Tesla Owners Club UK Events Calendar Scraper.
 
-Scrapes upcoming events from Tesla Owners UK (https://teslaowners.org.uk/events)
-and generates an iCalendar file. Fetches each event's detail page for richer
-descriptions, map coordinates, and additional metadata.
+Loads events from the Tesla Owners UK Ti.to account (checkout JSON + per-event
+ICS) and generates an iCalendar file plus static HTML. ICS times from Ti.to are
+interpreted in Europe/London when no TZID is present (UK club events), then
+emitted in UTC for broad mobile client compatibility.
 """
 import datetime
+import hashlib
+import html
 import json
 import logging
 import os
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote, unquote
+from zoneinfo import ZoneInfo
 
 import requests
 
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-EVENTS_URL = "https://teslaowners.org.uk/events"
-BASE_URL = "https://teslaowners.org.uk"
+TITO_ACCOUNT = "teslaownersuk"
+TITO_CHECKOUT_JSON = f"https://checkout.tito.io/{TITO_ACCOUNT}.json"
+TITO_PUBLIC_BASE = f"https://ti.to/{TITO_ACCOUNT}"
+# Tesla Owners UK public site (footer / JSON-LD organizer)
+CLUB_PUBLIC_URL = "https://teslaowners.uk"
 HTTP_TIMEOUT = 60
 HTTP_RETRIES = 3
 HTTP_RETRY_DELAY = 1
@@ -39,11 +47,45 @@ CACHE_FILE = ".tocuk_event_cache.json"
 CACHE_EXPIRY_DAYS = 7
 FETCH_DELAY_SEC = 0.5  # Delay between detail page requests
 
-# State file to detect new events (skip full scrape when no new events)
+# State file: skip full scrape when upcoming metadata fingerprints match last run
 STATE_FILE = "docs/.last_upcoming.json"
+
+# Normalised phrases meaning “venue not final yet” (case-insensitive, stripped)
+TBC_LOCATION_PHRASES = frozenset(
+    {
+        "tbc",
+        "tba",
+        "tbd",
+        "n/a",
+        "na",
+        "none",
+        "—",
+        "-",
+        "venue tbc",
+        "venue tba",
+        "location tbc",
+        "location tba",
+        "to be confirmed",
+        "to be announced",
+        "to be decided",
+        "to be advised",
+        "details tbc",
+    }
+)
 
 # Health status file for monitoring
 HEALTH_FILE = "docs/.health_status.json"
+
+# Public site URL for OG tags, sitemap, and robots (override when forking Pages)
+_cal_site = (os.environ.get("CALENDAR_SITE_URL") or "").strip()
+SITE_PUBLIC_URL = (
+    _cal_site
+    if _cal_site
+    else "https://evenwebb.github.io/tesla-owners-club-uk-events-calendar"
+).rstrip("/")
+
+# Per-slug iCal SEQUENCE / DTSTAMP persistence (subscribers see updates reliably)
+ICAL_SEQUENCE_FILE = os.path.join(OUTPUT_DIR, ".ical_sequence.json")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -86,122 +128,347 @@ def fetch_with_retries(
     raise requests.RequestException("All retries exhausted")
 
 
-def validate_event_data(event: Dict[str, Any]) -> bool:
-    """Validate that event dict has minimum required fields.
-
-    Args:
-        event: Event dictionary to validate
-
-    Returns:
-        True if event has required fields, False otherwise
-    """
-    # Must have at least a title or slug
-    if not event.get("title") and not event.get("slug"):
-        logger.warning("Event missing both title and slug: %s", event)
+def validate_tito_list_row(row: Dict[str, Any]) -> bool:
+    """Ti.to checkout JSON row: needs slug, title, and display time string."""
+    if not row.get("title") and not row.get("slug"):
+        logger.warning("Ti.to row missing title and slug: %s", row)
         return False
-
-    # Must have a start time
-    if not event.get("start_at"):
-        logger.warning("Event %s missing start_at", event.get("title") or event.get("slug"))
+    if not row.get("time"):
+        logger.warning(
+            "Ti.to row %s missing time string",
+            row.get("slug") or row.get("title"),
+        )
         return False
-
     return True
 
 
-def extract_events_from_page(html: str) -> List[Dict[str, Any]]:
-    """Extract events from __NEXT_DATA__ JSON embedded in the page with validation.
+def validate_event_data(event: Dict[str, Any]) -> bool:
+    """Validate enriched event (after ICS merge) for HTML / iCal."""
+    if not event.get("title") and not event.get("slug"):
+        logger.warning("Event missing both title and slug: %s", event)
+        return False
+    if not event.get("start_at"):
+        logger.warning("Event %s missing start_at", event.get("title") or event.get("slug"))
+        return False
+    return True
 
-    Returns:
-        List of valid event dicts with title, start_at, end_at, location, description, url, slug.
-    """
-    # Try to find __NEXT_DATA__
-    match = re.search(
-        r'<script id="__NEXT_DATA__" type="application/json">(.+?)</script>',
-        html,
-        re.DOTALL,
-    )
-    if not match:
-        logger.error("Could not find __NEXT_DATA__ in page")
-        # Attempt fallback: look for alternative script tags or data attributes
-        # (This would be where you'd add alternative parsing strategies if the site changes)
-        logger.info("Attempting fallback parsing strategies...")
-        # For now, return empty - could add more sophisticated fallbacks here
-        return []
 
-    # Parse JSON with error handling
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError as e:
-        logger.error("Failed to parse __NEXT_DATA__ JSON: %s", e)
-        logger.debug("JSON content: %s", match.group(1)[:500])  # Log first 500 chars for debugging
-        return []
+def slug_from_tito_url(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return None
+    m = re.search(r"ti\.to/" + re.escape(TITO_ACCOUNT) + r"/([^/?#]+)/?", url, re.I)
+    return unquote(m.group(1)) if m else None
 
-    # Validate schema structure
-    if not isinstance(data, dict):
-        logger.error("__NEXT_DATA__ is not a dict: %s", type(data))
-        return []
 
-    props = data.get("props")
-    if not isinstance(props, dict):
-        logger.error("props is missing or not a dict")
-        return []
+def tito_event_public_url(slug: Optional[str]) -> str:
+    if not slug:
+        return ""
+    return f"{TITO_PUBLIC_BASE}/{quote(str(slug), safe='-_.~')}"
 
-    page_props = props.get("pageProps")
-    if not isinstance(page_props, dict):
-        logger.error("pageProps is missing or not a dict")
-        return []
 
-    events_data = page_props.get("events")
-    if not isinstance(events_data, dict):
-        logger.warning("events is missing or not a dict, trying direct event list")
-        # Fallback: check if pageProps itself contains event array
-        if isinstance(page_props.get("events"), list):
-            upcoming = page_props.get("events", [])
-            past = []
+def unfold_ical_lines(raw: str) -> List[str]:
+    """RFC 5545 line unfolding (continuation lines start with space or tab)."""
+    text = raw.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    out: List[str] = []
+    for line in lines:
+        if not line:
+            continue
+        if line[0] in " \t" and out:
+            out[-1] += line[1:]
         else:
-            logger.error("Could not find events data in expected structure")
-            return []
-    else:
-        upcoming = events_data.get("upcoming", [])
-        past = events_data.get("past", [])
+            out.append(line)
+    return out
 
-    # Validate event lists are actually lists
-    if not isinstance(upcoming, list):
-        logger.warning("upcoming is not a list, using empty list")
-        upcoming = []
-    if not isinstance(past, list):
-        logger.warning("past is not a list, using empty list")
-        past = []
 
-    # Merge and deduplicate by slug (upcoming takes precedence)
-    # Also validate each event has minimum required fields
-    seen = set()
-    merged = []
-    invalid_count = 0
+def unescape_ical_text_value(val: str) -> str:
+    """Unescape RFC 5545 TEXT in property values (LOCATION, SUMMARY, etc.)."""
+    if not val:
+        return ""
+    return (
+        val.replace("\\N", "\n")
+        .replace("\\n", "\n")
+        .replace("\\,", ",")
+        .replace("\\;", ";")
+        .replace("\\\\", "\\")
+    )
 
-    for e in upcoming + past:
-        if not isinstance(e, dict):
-            logger.warning("Skipping non-dict event: %s", type(e))
-            invalid_count += 1
+
+def split_ical_content_line(line: str) -> Tuple[str, Dict[str, str], str]:
+    """Split 'NAME;PARAM=VAL:VALUE' into name (upper), param dict, value."""
+    if ":" not in line:
+        return line.upper(), {}, ""
+    key_part, value = line.split(":", 1)
+    sem = key_part.split(";", 1)
+    name = sem[0].upper()
+    params: Dict[str, str] = {}
+    if len(sem) > 1:
+        for chunk in sem[1].split(";"):
+            if "=" in chunk:
+                k, v = chunk.split("=", 1)
+                params[k.upper()] = v
+    return name, params, value
+
+
+def _trim_ical_datetime_value(value: str) -> str:
+    v = value.strip()
+    if "." in v and v.endswith("Z"):
+        return v.split(".")[0] + "Z"
+    if "." in v and "T" in v:
+        return v.split(".")[0]
+    return v
+
+
+def ical_value_to_datetime(
+    value: str,
+    params: Dict[str, str],
+    *,
+    floating_wall_clock_tz: str = "Europe/London",
+    assume_utc_if_naive: bool = False,
+) -> Optional[datetime.datetime]:
+    """Parse DTSTART/DTEND/CREATED-style values from Ti.to ICS."""
+    raw = _trim_ical_datetime_value(value)
+    if not raw:
+        return None
+    tzid = params.get("TZID")
+    try:
+        if len(raw) == 8 and "T" not in raw:
+            d = datetime.datetime.strptime(raw, "%Y%m%d").date()
+            tz = ZoneInfo(tzid or floating_wall_clock_tz)
+            return datetime.datetime.combine(d, datetime.time.min, tzinfo=tz)
+        if raw.endswith("Z"):
+            core = raw[:-1]
+            for fmt in ("%Y%m%dT%H%M%S", "%Y%m%dT%H%M"):
+                try:
+                    return datetime.datetime.strptime(core, fmt).replace(
+                        tzinfo=datetime.timezone.utc
+                    )
+                except ValueError:
+                    continue
+            return None
+        if tzid:
+            try:
+                tz = ZoneInfo(tzid)
+            except Exception:
+                tz = ZoneInfo(floating_wall_clock_tz)
+            for fmt in ("%Y%m%dT%H%M%S", "%Y%m%dT%H%M"):
+                try:
+                    return datetime.datetime.strptime(raw, fmt).replace(tzinfo=tz)
+                except ValueError:
+                    continue
+            return None
+        dt_naive = None
+        for fmt in ("%Y%m%dT%H%M%S", "%Y%m%dT%H%M"):
+            try:
+                dt_naive = datetime.datetime.strptime(raw, fmt)
+                break
+            except ValueError:
+                continue
+        if dt_naive is None:
+            return None
+        if assume_utc_if_naive:
+            return dt_naive.replace(tzinfo=datetime.timezone.utc)
+        return dt_naive.replace(tzinfo=ZoneInfo(floating_wall_clock_tz))
+    except (ValueError, TypeError, OSError) as e:
+        logger.debug("ical datetime parse failed %r: %s", value, e)
+        return None
+
+
+def parse_tito_event_ics(ics_text: str) -> Optional[Dict[str, Any]]:
+    """Parse first VEVENT from Ti.to checkout ICS into our event-detail shape."""
+    if "BEGIN:VEVENT" not in ics_text:
+        return None
+    start = ics_text.find("BEGIN:VEVENT")
+    end = ics_text.find("END:VEVENT", start)
+    if start < 0 or end < 0:
+        return None
+    block = ics_text[start : end + len("END:VEVENT")]
+    lines = unfold_ical_lines(block)
+    props: Dict[str, List[Tuple[Dict[str, str], str]]] = {}
+    for line in lines:
+        if not line or line.startswith("BEGIN:") or line.startswith("END:"):
             continue
+        name, params, value = split_ical_content_line(line)
+        props.setdefault(name, []).append((params, value))
 
-        # Validate event has required fields
-        if not validate_event_data(e):
-            invalid_count += 1
+    def first_val(key: str) -> Optional[str]:
+        items = props.get(key)
+        if not items:
+            return None
+        return items[0][1]
+
+    def first_params(key: str) -> Dict[str, str]:
+        items = props.get(key)
+        if not items:
+            return {}
+        return items[0][0]
+
+    dtstart = first_val("DTSTART")
+    dtend = first_val("DTEND")
+    if not dtstart:
+        return None
+
+    start_dt = ical_value_to_datetime(dtstart, first_params("DTSTART"))
+    end_dt = None
+    if dtend:
+        end_dt = ical_value_to_datetime(dtend, first_params("DTEND"))
+
+    created_raw = first_val("CREATED")
+    modified_raw = first_val("LAST-MODIFIED")
+    created_dt = None
+    mod_dt = None
+    if created_raw:
+        created_dt = ical_value_to_datetime(
+            created_raw, first_params("CREATED"), assume_utc_if_naive=True
+        )
+    if modified_raw:
+        mod_dt = ical_value_to_datetime(
+            modified_raw, first_params("LAST-MODIFIED"), assume_utc_if_naive=True
+        )
+
+    status_line = (first_val("STATUS") or "").strip().upper()
+    cancelled = status_line == "CANCELLED"
+
+    desc_parts = []
+    for params, val in props.get("DESCRIPTION", []):
+        desc_parts.append(unescape_ical_text_value(val))
+    description = "\n".join(desc_parts).strip()
+
+    loc_parts = [unescape_ical_text_value(v) for _, v in props.get("LOCATION", [])]
+    location = "\n".join(loc_parts).strip() if loc_parts else ""
+
+    summary = unescape_ical_text_value((first_val("SUMMARY") or "").strip())
+
+    urls = []
+    for key in ("URL",):
+        for params_u, val in props.get(key, []):
+            v = val.strip()
+            if v and v not in urls:
+                urls.append(v)
+
+    uid_raw = (first_val("UID") or "").strip()
+    geo_line = first_val("GEO")
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    if geo_line and ";" in geo_line:
+        try:
+            a, b = geo_line.split(";", 1)
+            lat, lon = float(a), float(b)
+        except (ValueError, TypeError):
+            pass
+
+    org_line = first_val("ORGANIZER") or ""
+    organizer_email = ""
+    if org_line.lower().startswith("mailto:"):
+        organizer_email = org_line[7:].strip()
+
+    detail: Dict[str, Any] = {
+        "start_at": start_dt.isoformat() if start_dt else None,
+        "end_at": end_dt.isoformat() if end_dt else None,
+        "description": description,
+        "location": location,
+        "cancelled": cancelled,
+    }
+    if summary:
+        detail["title"] = summary
+    if uid_raw:
+        detail["ical_uid"] = uid_raw
+    if created_dt:
+        detail["created_at"] = created_dt.isoformat()
+    if mod_dt:
+        detail["updated_at"] = mod_dt.isoformat()
+    if urls:
+        detail["url"] = urls[0]
+        if len(urls) > 1:
+            detail["homepage_url"] = urls[1]
+    if organizer_email:
+        detail["email_address"] = organizer_email
+        detail["reply_to_email"] = organizer_email
+    if lat is not None and lon is not None:
+        detail["map_latitude"] = lat
+        detail["map_longitude"] = lon
+        detail["map_link"] = f"https://www.google.com/maps?q={lat},{lon}"
+
+    stamp_raw = first_val("DTSTAMP")
+    if stamp_raw:
+        stamp_dt = ical_value_to_datetime(
+            stamp_raw, first_params("DTSTAMP"), assume_utc_if_naive=True
+        )
+        if stamp_dt:
+            detail["source_dtstamp"] = stamp_dt.isoformat()
+
+    return detail
+
+
+def row_from_tito_json(obj: Dict[str, Any], bucket: str) -> Optional[Dict[str, Any]]:
+    """Normalise one Ti.to checkout JSON event object."""
+    if not isinstance(obj, dict):
+        return None
+    url = (obj.get("url") or "").strip()
+    slug = slug_from_tito_url(url)
+    title = (obj.get("title") or "").strip()
+    if not slug:
+        logger.warning("Skipping Ti.to row without slug in URL: %s", url or obj)
+        return None
+    time_str = (obj.get("time") or "").strip()
+    if not time_str and bucket == "unscheduled":
+        time_str = "Unscheduled"
+
+    row: Dict[str, Any] = {
+        "slug": slug,
+        "title": title,
+        "location": (obj.get("location") or "").strip(),
+        "time": time_str,
+        "date_or_range": time_str,
+        "banner_url": fix_banner_url((obj.get("banner_url") or "").strip()),
+        "url": url or tito_event_public_url(slug),
+        "tito_bucket": bucket,
+    }
+    if not validate_tito_list_row(row):
+        return None
+    return row
+
+
+def fetch_tito_event_rows() -> List[Dict[str, Any]]:
+    """Download Tesla Owners UK event list from checkout.tito.io JSON."""
+    logger.info("Fetching Ti.to event list %s", TITO_CHECKOUT_JSON)
+    response = fetch_with_retries(TITO_CHECKOUT_JSON)
+    try:
+        data = response.json()
+    except json.JSONDecodeError as e:
+        logger.error("Ti.to JSON invalid: %s", e)
+        return []
+
+    events_block = data.get("events")
+    if not isinstance(events_block, dict):
+        logger.error("Ti.to JSON missing events object")
+        return []
+
+    upcoming = events_block.get("upcoming") or []
+    past = events_block.get("past") or []
+    unscheduled = events_block.get("unscheduled") or []
+
+    merged: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for bucket, lst in (
+        ("upcoming", upcoming),
+        ("unscheduled", unscheduled),
+        ("past", past),
+    ):
+        if not isinstance(lst, list):
             continue
+        for obj in lst:
+            row = row_from_tito_json(obj, bucket)
+            if not row:
+                continue
+            s = row["slug"]
+            if s in seen:
+                continue
+            seen.add(s)
+            merged.append(row)
 
-        slug = e.get("slug")
-        if slug and slug not in seen:
-            seen.add(slug)
-            merged.append(e)
-        elif not slug:
-            # Events without slugs are not deduplicated
-            merged.append(e)
-
-    if invalid_count > 0:
-        logger.warning("Skipped %d invalid events", invalid_count)
-
-    logger.info("Successfully extracted %d valid events", len(merged))
+    logger.info("Loaded %d event row(s) from Ti.to", len(merged))
     return merged
 
 
@@ -233,40 +500,24 @@ def save_cache(cache: Dict[str, dict]) -> None:
         logger.warning("Cache save failed: %s", e)
 
 
-def load_last_upcoming_slugs() -> set:
-    """Load the set of upcoming event slugs from last run. Empty if no state file."""
-    if not os.path.exists(STATE_FILE):
-        return set()
-    try:
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        slugs = data.get("slugs", [])
-        return set(slugs) if isinstance(slugs, list) else set()
-    except (json.JSONDecodeError, OSError):
-        return set()
+def is_tbc_location_value(location: Optional[str]) -> bool:
+    """True if location is missing or is a common TBC/TBA placeholder."""
+    if location is None:
+        return True
+    s = str(location).strip()
+    if not s:
+        return True
+    low = s.lower().rstrip(".")
+    if low in TBC_LOCATION_PHRASES:
+        return True
+    return False
 
 
-def save_last_upcoming_slugs(slugs: List[str]) -> None:
-    """Save the current upcoming event slugs for next run comparison."""
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
-    try:
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(
-                {"slugs": slugs, "updated": datetime.datetime.now().isoformat()},
-                f,
-                indent=2,
-            )
-        logger.info("Saved state with %d upcoming slugs", len(slugs))
-    except OSError as e:
-        logger.warning("State save failed: %s", e)
-
-
-def has_new_events(current_slugs: set, previous_slugs: set) -> bool:
-    """True if there is at least one event in current that was not in previous.
-
-    Events moving from upcoming to past (in previous but not current) do NOT count.
-    """
-    return bool(current_slugs - previous_slugs)
+def display_event_location(location: Optional[str]) -> str:
+    """User-facing location line; shows Venue TBC when unknown."""
+    if is_tbc_location_value(location):
+        return "Venue TBC"
+    return str(location).strip()
 
 
 def save_health_status(
@@ -310,84 +561,42 @@ def load_health_status() -> Optional[Dict[str, Any]]:
         return None
 
 
-def extract_event_from_detail_page(html: str) -> Optional[Dict[str, Any]]:
-    """Extract full event data from __NEXT_DATA__ on an event detail page with validation.
-
-    Returns:
-        Event dict from pageProps.event, or None if not found or invalid.
-    """
-    match = re.search(
-        r'<script id="__NEXT_DATA__" type="application/json">(.+?)</script>',
-        html,
-        re.DOTALL,
-    )
-    if not match:
-        logger.debug("No __NEXT_DATA__ found in detail page")
-        return None
-
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError as e:
-        logger.warning("Failed to parse detail page JSON: %s", e)
-        return None
-
-    # Validate structure
-    if not isinstance(data, dict):
-        logger.warning("Detail page data is not a dict")
-        return None
-
-    props = data.get("props")
-    if not isinstance(props, dict):
-        logger.warning("Detail page props missing or invalid")
-        return None
-
-    page_props = props.get("pageProps")
-    if not isinstance(page_props, dict):
-        logger.warning("Detail page pageProps missing or invalid")
-        return None
-
-    event = page_props.get("event")
-    if not isinstance(event, dict):
-        logger.warning("Detail page event missing or not a dict")
-        return None
-
-    # Validate minimum fields
-    if not validate_event_data(event):
-        logger.warning("Detail page event failed validation")
-        return None
-
-    return event
-
-
-def fetch_event_detail(slug: str, cache: Dict[str, dict]) -> Optional[Dict[str, Any]]:
-    """Fetch event detail from its page. Uses cache if available and not expired.
-
-    Args:
-        slug: Event slug (e.g. 'giga-texas-2026')
-        cache: Cache dict to read/write
-
-    Returns:
-        Merged event dict with detail page data, or None on failure.
-    """
+def fetch_event_detail(
+    slug: str,
+    cache: Dict[str, dict],
+    list_event: Optional[Dict[str, Any]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Fetch per-event ICS from Ti.to checkout. Uses cache unless list metadata changed."""
     if not slug:
         return None
 
     if slug in cache:
-        entry = {k: v for k, v in cache[slug].items() if k != "cached_at"}
-        logger.info("Using cached detail for: %s", slug)
-        return entry
+        cached_body = {k: v for k, v in cache[slug].items() if k != "cached_at"}
+        if list_event is not None:
+            if event_metadata_fingerprint(list_event) != event_metadata_fingerprint(
+                cached_body
+            ):
+                logger.info("Detail cache stale for %s (listing time/venue changed)", slug)
+                del cache[slug]
+            else:
+                logger.info("Using cached detail for: %s", slug)
+                return cached_body
+        else:
+            logger.info("Using cached detail for: %s", slug)
+            return cached_body
 
-    url = f"{BASE_URL}/events/{slug}"
+    url = f"https://checkout.tito.io/{TITO_ACCOUNT}/{quote(str(slug), safe='')}?format=ics"
     try:
         time.sleep(FETCH_DELAY_SEC)
         response = fetch_with_retries(url)
-        event = extract_event_from_detail_page(response.text)
-        if event:
+        event = parse_tito_event_ics(response.text)
+        if event and event.get("start_at"):
             cache[slug] = {**event, "cached_at": datetime.datetime.now().isoformat()}
-            logger.info("Fetched detail for: %s", slug)
+            logger.info("Fetched Ti.to ICS for: %s", slug)
             return event
+        logger.warning("Ti.to ICS missing start for: %s", slug)
     except requests.RequestException as e:
-        logger.warning("Failed to fetch event detail %s: %s", slug, e)
+        logger.warning("Failed to fetch Ti.to ICS %s: %s", slug, e)
     return None
 
 
@@ -418,16 +627,24 @@ def fix_banner_url(url: str) -> str:
 def merge_event_detail(
     list_event: Dict[str, Any], detail_event: Optional[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    """Merge detail page data into list event. Detail overrides where richer."""
+    """Merge Ti.to ICS detail into checkout JSON row. Detail wins for schedule, venue, copy."""
     if not detail_event:
         return list_event
     merged = dict(list_event)
+    if detail_event.get("title"):
+        merged["title"] = detail_event["title"]
     # Prefer detail page for description (often fuller)
     if detail_event.get("description"):
         merged["description"] = detail_event["description"]
-    # Prefer detail location if list is empty
-    if detail_event.get("location") and not merged.get("location"):
-        merged["location"] = detail_event["location"]
+    # Detail page is authoritative for start/end (handles date/time changes, same slug/title)
+    if detail_event.get("start_at"):
+        merged["start_at"] = detail_event["start_at"]
+    if detail_event.get("end_at"):
+        merged["end_at"] = detail_event["end_at"]
+    # Venue: fill TBC from detail, or replace when the club updates location
+    dloc = detail_event.get("location")
+    if dloc is not None and str(dloc).strip():
+        merged["location"] = str(dloc).strip()
     # Map coordinates and link
     if detail_event.get("map_latitude") is not None:
         merged["map_latitude"] = detail_event["map_latitude"]
@@ -465,6 +682,12 @@ def merge_event_detail(
         merged["releases"] = detail_event["releases"]
     if detail_event.get("homepage_url"):
         merged["homepage_url"] = detail_event["homepage_url"]
+    if detail_event.get("ical_uid"):
+        merged["ical_uid"] = detail_event["ical_uid"]
+    if "cancelled" in detail_event:
+        merged["cancelled"] = bool(detail_event["cancelled"])
+    if detail_event.get("source_dtstamp"):
+        merged["source_dtstamp"] = detail_event["source_dtstamp"]
     return merged
 
 
@@ -489,19 +712,119 @@ def parse_iso_datetime(iso_str: str) -> Optional[datetime.datetime]:
     if not iso_str:
         return None
     try:
-        # Handle formats like 2026-03-16T11:30:00.000-06:00 or 2026-03-28T10:30:00.000Z
-        dt = datetime.datetime.fromisoformat(
-            iso_str.replace("Z", "+00:00").replace(".000", "")
-        )
-        return dt
+        # fromisoformat handles fractional seconds and offsets (Python 3.11+)
+        return datetime.datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
     except (ValueError, TypeError) as e:
         logger.warning("Failed to parse datetime %r: %s", iso_str, e)
         return None
 
 
+def normalize_timestamp_for_fingerprint(iso_str: Optional[str]) -> str:
+    """Normalise start/end for stable fingerprinting across list vs detail JSON."""
+    if not iso_str:
+        return ""
+    dt = parse_iso_datetime(iso_str)
+    if not dt:
+        return str(iso_str).strip()
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    else:
+        dt = dt.astimezone(datetime.timezone.utc)
+    return dt.isoformat(timespec="seconds")
+
+
+def event_metadata_fingerprint(event: Dict[str, Any]) -> str:
+    """Fingerprint schedule + venue (slug is identity; title excluded).
+
+    Uses Ti.to list `time` when ISO start/end not yet merged from ICS.
+    """
+    loc = (event.get("location") or "").strip()
+    start_fp = normalize_timestamp_for_fingerprint(event.get("start_at"))
+    if not start_fp and event.get("time"):
+        start_fp = str(event.get("time")).strip()
+    end_fp = normalize_timestamp_for_fingerprint(event.get("end_at"))
+    canc = "1" if event.get("cancelled") else "0"
+    return "\x1f".join([start_fp, end_fp, loc, canc])
+
+
+def ical_revision_fingerprint(event: Dict[str, Any]) -> str:
+    """Vary SEQUENCE when enriched start/end/location/title/cancelled changes."""
+    return "\x1f".join(
+        [
+            normalize_timestamp_for_fingerprint(event.get("start_at")),
+            normalize_timestamp_for_fingerprint(event.get("end_at")),
+            (event.get("location") or "").strip(),
+            (event.get("title") or "").strip(),
+            "1" if event.get("cancelled") else "0",
+        ]
+    )
+
+
+def build_upcoming_state(future_events: List[Dict[str, Any]]) -> Dict[str, str]:
+    """Map stable keys to metadata fingerprints for skip logic."""
+    out: Dict[str, str] = {}
+    for e in future_events:
+        slug = e.get("slug")
+        fp = event_metadata_fingerprint(e)
+        if slug:
+            out[str(slug)] = fp
+        else:
+            basis = f"{fp}\x1f{e.get('title', '')!s}"
+            h = hashlib.sha256(basis.encode("utf-8")).hexdigest()[:26]
+            out[f"__noshlug_{h}"] = fp
+    return dict(sorted(out.items()))
+
+
+def load_last_upcoming_state() -> Optional[Dict[str, str]]:
+    """Load v2 upcoming fingerprints; None if missing or legacy-only file (forces full run)."""
+    if not os.path.exists(STATE_FILE):
+        return None
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+    upcoming = data.get("upcoming")
+    if isinstance(upcoming, dict):
+        return {str(k): str(v) for k, v in upcoming.items()}
+    return None
+
+
+def save_last_upcoming_state(upcoming: Dict[str, str]) -> None:
+    """Persist upcoming metadata fingerprints (v2)."""
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    try:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "version": 2,
+                    "upcoming": upcoming,
+                    "updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+        logger.info("Saved state for %d upcoming row(s)", len(upcoming))
+    except OSError as e:
+        logger.warning("State save failed: %s", e)
+
+
+def escape_ical_text(text: str) -> str:
+    """RFC 5545 TEXT value escaping (backslash, newline, semicolon, comma)."""
+    if not text:
+        return ""
+    return (
+        text.replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+    )
+
+
 def escape_and_fold_ical_text(text: str, prefix: str = "") -> str:
     """Escape and fold text for iCalendar format per RFC 5545."""
-    escaped = text.replace("\\", "\\\\").replace("\n", "\\n")
+    escaped = escape_ical_text(text)
     full_line = prefix + escaped
 
     if len(full_line) <= ICAL_LINE_LENGTH:
@@ -549,10 +872,11 @@ def generate_alarm(alarm_config: Dict[str, Any], event_start: datetime.datetime)
         trigger_line = f"TRIGGER:-P{days}D"
 
     description = alarm_config.get("description", "Event Reminder")
+    desc_esc = escape_ical_text(str(description))
     return (
         "BEGIN:VALARM\n"
         "ACTION:DISPLAY\n"
-        f"DESCRIPTION:{description}\n"
+        f"DESCRIPTION:{desc_esc}\n"
         f"{trigger_line}\n"
         "END:VALARM\n"
     )
@@ -565,23 +889,109 @@ def _format_ical_datetime(dt: datetime.datetime) -> str:
     return dt.strftime("%Y%m%dT%H%M%SZ")
 
 
-def make_ics_event(event: Dict[str, Any]) -> str:
+def _parse_ical_z_datetime(s: str) -> Optional[datetime.datetime]:
+    """Parse DTSTAMP-style UTC literal."""
+    if not s or len(s) < 15:
+        return None
+    try:
+        return datetime.datetime.strptime(s[:15], "%Y%m%dT%H%M%SZ").replace(
+            tzinfo=datetime.timezone.utc
+        )
+    except ValueError:
+        return None
+
+
+def load_ical_sequence_state() -> Dict[str, Dict[str, Any]]:
+    """slug -> {seq, fp, dtstamp} for RFC 5545 SEQUENCE / stable DTSTAMP."""
+    if not os.path.exists(ICAL_SEQUENCE_FILE):
+        return {}
+    try:
+        with open(ICAL_SEQUENCE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    out: Dict[str, Dict[str, Any]] = {}
+    for k, v in data.items():
+        if isinstance(k, str) and isinstance(v, dict) and "seq" in v and "fp" in v:
+            out[k] = v
+    return out
+
+
+def save_ical_sequence_state(state: Dict[str, Dict[str, Any]]) -> None:
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    try:
+        with open(ICAL_SEQUENCE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        logger.info("Saved iCal SEQUENCE state (%d slug(s))", len(state))
+    except OSError as e:
+        logger.warning("iCal sequence save failed: %s", e)
+
+
+def write_seo_files(site_base_url: str) -> None:
+    """Write sitemap.xml and robots.txt for GitHub Pages."""
+    base = site_base_url.rstrip("/")
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>{base}/index.html</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>{base}/archive.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>{base}/tocuk.ics</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+</urlset>
+"""
+    robots = f"""User-agent: *
+Allow: /
+
+Sitemap: {base}/sitemap.xml
+"""
+    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    try:
+        (Path(OUTPUT_DIR) / "sitemap.xml").write_text(sitemap, encoding="utf-8")
+        (Path(OUTPUT_DIR) / "robots.txt").write_text(robots, encoding="utf-8")
+        logger.info("Wrote sitemap.xml and robots.txt")
+    except OSError as e:
+        logger.warning("SEO files write failed: %s", e)
+
+
+def make_ics_event(
+    event: Dict[str, Any],
+    sequence: int = 0,
+    dtstamp_utc: Optional[datetime.datetime] = None,
+) -> str:
     """Return an iCalendar VEVENT string for a Tesla Owners UK event.
 
-    Populates all applicable RFC 5545 VEVENT properties from scraped data.
+    Uses UTC DTSTART/DTEND (Z) for reliable Android/iOS subscription sync.
+    No VALARM components (alarms off). Cancelled events use STATUS:CANCELLED
+    and a CANCELLED: SUMMARY prefix when not already present.
     """
-    title = event.get("title", "Untitled Event")
+    raw_title = event.get("title", "Untitled Event")
+    cancelled = bool(event.get("cancelled"))
+    if cancelled:
+        t = str(raw_title).strip()
+        up = t.upper()
+        if up.startswith("CANCELLED:") or up.startswith("CANCELLED :"):
+            title = t
+        else:
+            title = f"CANCELLED: {raw_title}"
+    else:
+        title = raw_title
+
     start_at = event.get("start_at")
     end_at = event.get("end_at")
-    location = event.get("location", "")
+    location = display_event_location(event.get("location"))
     description_raw = event.get("description", "")
-    slug = event.get("slug", "")
-    ti_to_url = event.get("url", "")
-    event_id = event.get("id")
+    slug = str(event.get("slug", "") or "")
+    ti_to_url = (event.get("url") or "").strip() or tito_event_public_url(slug)
+    event_url = ti_to_url
+    ical_uid_raw = (event.get("ical_uid") or "").strip()
     created_at = event.get("created_at")
     updated_at = event.get("updated_at")
-    timezone_name = event.get("timezone", "")
+    timezone_name = (event.get("timezone") or "").strip() or "Europe/London"
     date_or_range = event.get("date_or_range", "")
+    list_time = (event.get("time") or "").strip()
+    tito_bucket = (event.get("tito_bucket") or "").strip()
+    source_dtstamp = event.get("source_dtstamp")
     banner_url = event.get("banner_url", "")
     email_address = event.get("email_address", "")
     reply_to_email = event.get("reply_to_email", "")
@@ -590,13 +1000,11 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     tickets_count = event.get("tickets_count")
     releases = event.get("releases") or []
 
-    event_url = f"{BASE_URL}/events/{slug}" if slug else ti_to_url or ""
-
     start_dt = parse_iso_datetime(start_at)
     end_dt = parse_iso_datetime(end_at)
 
     if not start_dt:
-        logger.warning("Skipping event %s: no valid start time", title)
+        logger.warning("Skipping event %s: no valid start time", raw_title)
         return ""
 
     # Use end_dt if valid, otherwise default to start + 1 hour
@@ -605,34 +1013,33 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     else:
         end_dt_use = start_dt + datetime.timedelta(hours=1)
 
-    # Format for iCal: convert to UTC for Z-suffix format
-    if start_dt.tzinfo:
-        start_utc = start_dt.astimezone(datetime.timezone.utc)
-        end_utc = end_dt_use.astimezone(datetime.timezone.utc)
-        start_str = start_utc.strftime("%Y%m%dT%H%M%SZ")
-        end_str = end_utc.strftime("%Y%m%dT%H%M%SZ")
-    else:
-        start_str = start_dt.strftime("%Y%m%dT%H%M%S")
-        end_str = end_dt_use.strftime("%Y%m%dT%H%M%S")
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.replace(tzinfo=datetime.timezone.utc)
+    if end_dt_use.tzinfo is None:
+        end_dt_use = end_dt_use.replace(tzinfo=datetime.timezone.utc)
+    start_utc = start_dt.astimezone(datetime.timezone.utc)
+    end_utc = end_dt_use.astimezone(datetime.timezone.utc)
+    start_str = start_utc.strftime("%Y%m%dT%H%M%SZ")
+    end_str = end_utc.strftime("%Y%m%dT%H%M%SZ")
 
     # Build description with all available info
     description = strip_html(description_raw)
     desc_parts = [description] if description else []
-    if date_or_range:
+    if list_time:
+        desc_parts.append(f"\nListing: {list_time}")
+    if date_or_range and date_or_range != list_time:
         desc_parts.append(f"\nWhen: {date_or_range}")
     if timezone_name:
-        desc_parts.append(f"Timezone: {timezone_name}")
+        desc_parts.append(f"\nWall clock / source TZ: {timezone_name}")
     additional = event.get("additional_info")
     if additional:
         desc_parts.append(f"\n{strip_html(str(additional))}")
     if ticket_success_message:
         desc_parts.append(f"\n{ticket_success_message}")
     if event_url:
-        desc_parts.append(f"\nEvent details: {event_url}")
-    if ti_to_url and ti_to_url != event_url:
-        desc_parts.append(f"\nBook tickets: {ti_to_url}")
+        desc_parts.append(f"\nEvent & tickets (Ti.to): {event_url}")
     homepage_url = event.get("homepage_url")
-    if homepage_url and homepage_url not in (event_url, ti_to_url):
+    if homepage_url and homepage_url != event_url:
         desc_parts.append(f"\nEvent website: {homepage_url}")
     # Map/directions: use map_link or build from lat/long
     map_link = event.get("map_link")
@@ -670,29 +1077,41 @@ def make_ics_event(event: Dict[str, Any]) -> str:
             parts.append(f"{tickets_count} ticket(s)")
         if parts:
             desc_parts.append(f"\n{' | '.join(parts)}")
-    desc_parts.append("\nTesla Owners UK event – https://teslaowners.org.uk/events")
+    if tito_bucket:
+        desc_parts.append(f"\nSource list: {tito_bucket}")
+    if source_dtstamp:
+        desc_parts.append(f"\nTi.to DTSTAMP: {source_dtstamp}")
+    desc_parts.append(f"\nTesla Owners UK – {TITO_PUBLIC_BASE}")
+    desc_parts.append(f"\nClub site: {CLUB_PUBLIC_URL}/")
     description_text = "\n".join(desc_parts)
 
-    # UID (required): stable unique identifier
-    uid = f"{event_id or slug}@teslaowners.org.uk" if (event_id or slug) else None
-    if not uid:
-        uid = f"{start_str}-{slug or title[:20]}@teslaowners.org.uk"
+    if ical_uid_raw and "@" in ical_uid_raw:
+        uid = ical_uid_raw
+    elif ical_uid_raw:
+        uid = f"{ical_uid_raw}@checkout.tito.io"
+    elif slug:
+        uid = f"{TITO_ACCOUNT}-{slug}@ti.to"
+    else:
+        safe_t = "".join(c for c in title[:24] if c.isalnum() or c in "-_")
+        uid = f"{start_str}-{safe_t}@ti.to"
 
-    # DTSTAMP (required): when the event was created/updated in our system
-    dtstamp_str = _format_ical_datetime(datetime.datetime.now(datetime.timezone.utc))
-    if updated_at:
-        upd_dt = parse_iso_datetime(updated_at)
-        if upd_dt:
-            dtstamp_str = _format_ical_datetime(upd_dt)
+    if dtstamp_utc is None:
+        dtstamp_utc = datetime.datetime.now(datetime.timezone.utc)
+    elif dtstamp_utc.tzinfo is None:
+        dtstamp_utc = dtstamp_utc.replace(tzinfo=datetime.timezone.utc)
+    else:
+        dtstamp_utc = dtstamp_utc.astimezone(datetime.timezone.utc)
+    dtstamp_str = _format_ical_datetime(dtstamp_utc)
 
-    # Build VEVENT
+    # Build VEVENT (SUMMARY/LOCATION use TEXT escaping per RFC 5545)
     lines = [
         "BEGIN:VEVENT",
         f"UID:{uid}",
         f"DTSTAMP:{dtstamp_str}",
+        f"SEQUENCE:{max(0, int(sequence))}",
         f"DTSTART:{start_str}",
         f"DTEND:{end_str}",
-        f"SUMMARY:{title}",
+        escape_and_fold_ical_text(title, "SUMMARY:"),
         escape_and_fold_ical_text(description_text, "DESCRIPTION:"),
     ]
 
@@ -710,7 +1129,7 @@ def make_ics_event(event: Dict[str, Any]) -> str:
 
     # LOCATION
     if location:
-        lines.append(f"LOCATION:{location}")
+        lines.append(escape_and_fold_ical_text(location, "LOCATION:"))
 
     # GEO
     lat, lon = event.get("map_latitude"), event.get("map_longitude")
@@ -742,6 +1161,10 @@ def make_ics_event(event: Dict[str, Any]) -> str:
         lines.append(escape_and_fold_ical_text(f"Timezone: {timezone_name}", "COMMENT:"))
     if date_or_range:
         lines.append(escape_and_fold_ical_text(f"Date: {date_or_range}", "COMMENT:"))
+    if list_time:
+        lines.append(escape_and_fold_ical_text(f"Ti.to listing: {list_time}", "COMMENT:"))
+    if tito_bucket:
+        lines.append(escape_and_fold_ical_text(f"Ti.to bucket: {tito_bucket}", "COMMENT:"))
 
     # CATEGORIES
     lines.append("CATEGORIES:Tesla Owners UK,Event")
@@ -749,8 +1172,10 @@ def make_ics_event(event: Dict[str, Any]) -> str:
     # CLASS (PUBLIC for public events)
     lines.append("CLASS:PUBLIC")
 
+    lines.append("TRANSP:OPAQUE")
+
     # STATUS
-    lines.append("STATUS:CONFIRMED")
+    lines.append("STATUS:CANCELLED" if cancelled else "STATUS:CONFIRMED")
 
     # ATTACH - banner image with format type for better client support
     if banner_url and banner_url.startswith("http"):
@@ -766,13 +1191,13 @@ def make_ics_event(event: Dict[str, Any]) -> str:
 
     # RESOURCES - venue/location as resource
     if location:
-        lines.append(f"RESOURCES:{location}")
+        lines.append(escape_and_fold_ical_text(location, "RESOURCES:"))
 
     # X- properties for extra metadata
     if timezone_name:
         lines.append(f"X-TIMEZONE:{timezone_name}")
-    if event_id:
-        lines.append(f"X-EVENT-ID:{event_id}")
+    if slug:
+        lines.append(f"X-TITO-SLUG:{slug}")
     if tickets_count is not None:
         lines.append(f"X-TICKETS-COUNT:{tickets_count}")
     if registrations_count is not None:
@@ -817,11 +1242,15 @@ def get_event_region(event: Dict[str, Any]) -> str:
     """Determine event region based on location.
 
     Returns:
-        Region: 'north', 'south', 'midlands', 'online', 'international'
+        Region: 'north', 'south', 'midlands', 'online', 'international', 'tbc', 'other'
     """
-    location = event.get("location", "").lower()
+    raw = event.get("location", "")
+    if is_tbc_location_value(raw):
+        return "tbc"
 
-    if "online" in location or not location:
+    location = raw.strip().lower()
+
+    if "online" in location or "virtual" in location:
         return "online"
 
     # International locations
@@ -853,6 +1282,9 @@ def get_event_status(event: Dict[str, Any]) -> tuple[str, str]:
     Returns:
         (status_text, emoji) tuple
     """
+    if event.get("cancelled"):
+        return ("Cancelled", "🚫")
+
     tickets_count = event.get("tickets_count")
     registrations_count = event.get("registrations_count")
     releases = event.get("releases") or []
@@ -900,7 +1332,7 @@ def generate_json_ld(events: List[Dict[str, Any]]) -> str:
             continue  # Skip past events
 
         end = parse_iso_datetime(e.get("end_at"))
-        location_name = e.get("location", "")
+        location_name = display_event_location(e.get("location"))
 
         event_data = {
             "@context": "https://schema.org",
@@ -908,13 +1340,17 @@ def generate_json_ld(events: List[Dict[str, Any]]) -> str:
             "name": e.get("title", ""),
             "startDate": start.isoformat(),
             "description": strip_html(e.get("description", ""))[:200],
-            "eventStatus": "https://schema.org/EventScheduled",
+            "eventStatus": (
+                "https://schema.org/EventCancelled"
+                if e.get("cancelled")
+                else "https://schema.org/EventScheduled"
+            ),
             "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
             "organizer": {
                 "@type": "Organization",
                 "name": "Tesla Owners UK",
-                "url": "https://teslaowners.org.uk"
-            }
+                "url": CLUB_PUBLIC_URL,
+            },
         }
 
         if end:
@@ -925,7 +1361,12 @@ def generate_json_ld(events: List[Dict[str, Any]]) -> str:
                 event_data["eventAttendanceMode"] = "https://schema.org/OnlineEventAttendanceMode"
                 event_data["location"] = {
                     "@type": "VirtualLocation",
-                    "url": "https://teslaowners.org.uk"
+                    "url": CLUB_PUBLIC_URL,
+                }
+            elif location_name == "Venue TBC":
+                event_data["location"] = {
+                    "@type": "Place",
+                    "name": "Venue TBC",
                 }
             else:
                 event_data["location"] = {
@@ -941,8 +1382,9 @@ def generate_json_ld(events: List[Dict[str, Any]]) -> str:
             event_data["image"] = e.get("banner_url")
 
         slug = e.get("slug")
-        if slug:
-            event_data["url"] = f"https://teslaowners.org.uk/events/{slug}"
+        pub = (e.get("url") or "").strip() or tito_event_public_url(slug)
+        if pub:
+            event_data["url"] = pub
 
         upcoming_events.append(event_data)
 
@@ -957,9 +1399,12 @@ def generate_json_ld(events: List[Dict[str, Any]]) -> str:
 def build_index_html(
     events: List[Dict[str, Any]],
     upcoming_count: Optional[int] = None,
-    health_status: Optional[Dict[str, Any]] = None
+    health_status: Optional[Dict[str, Any]] = None,
+    site_public_url: Optional[str] = None,
 ) -> str:
     """Build the index HTML page with calendar link and featured events."""
+    site_public_url = (site_public_url or SITE_PUBLIC_URL).rstrip("/")
+    og_image_url = f"{site_public_url}/og-image.png"
     ics_url = "tocuk.ics"
     count = upcoming_count if upcoming_count is not None else len(events)
 
@@ -989,20 +1434,30 @@ def build_index_html(
 
         status_emoji = "✅" if status == "success" else ("⚠️" if status == "partial" else "❌")
         status_class = "success" if status == "success" else ("warning" if status == "partial" else "error")
+        last_update_attr = html.escape(str(last_update), quote=True)
+        message_esc = html.escape(str(message), quote=False)
+        error_esc = html.escape(str(error), quote=False) if error else ""
 
         health_html = f'''
     <div class="health-status {status_class}">
       <div class="health-icon">{status_emoji}</div>
       <div class="health-info">
-        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="{last_update}">{time_ago}</span></div>
-        <div class="health-message">{message}</div>
-        {f'<div class="health-error">Error: {error}</div>' if error else ''}
+        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="{last_update_attr}">{time_ago}</span></div>
+        <div class="health-message">{message_esc}</div>
+        {f'<div class="health-error">Error: {error_esc}</div>' if error_esc else ''}
       </div>
     </div>'''
 
-    # Featured: show upcoming events first, then past - render ALL for filtering
+    # Main grid: upcoming only (past events live on archive.html)
     featured_html = ""
     events_json_data = []
+    stats = {
+        "total": 0,
+        "next_event": None,
+        "days_until": None,
+        "past_events": 0,
+        "next_event_date": "",
+    }
 
     if events:
         today = datetime.datetime.now(datetime.timezone.utc)
@@ -1015,14 +1470,14 @@ def build_index_html(
                 (upcoming_first if s >= today else past).append(e)
             else:
                 upcoming_first.append(e)
-        ordered = upcoming_first + past
 
-        # Calculate stats for dashboard
+        # Calculate stats for dashboard (past count includes full scraped list)
         stats = {
             "total": len(upcoming_first),
             "next_event": None,
             "days_until": None,
-            "past_events": len(past)
+            "past_events": len(past),
+            "next_event_date": "",
         }
 
         if upcoming_first:
@@ -1035,17 +1490,19 @@ def build_index_html(
                 stats["days_until"] = max(0, days_until.days)
                 stats["next_event_date"] = next_date.isoformat()
 
-        # Build event cards with full data for search/filter
+        # Build event cards with full data for search/filter (upcoming rows only)
         featured_items = []
-        for idx, e in enumerate(ordered):
+        for idx, e in enumerate(upcoming_first):
             start = parse_iso_datetime(e.get("start_at"))
             date_str = start.strftime("%d %b %Y") if start else ""
             time_str = start.strftime("%H:%M") if start else ""
             title = e.get("title", "Event")
-            location = e.get("location", "")
+            location = display_event_location(e.get("location"))
             description = strip_html(e.get("description", ""))[:200]
             slug = e.get("slug", "")
-            url = f"https://teslaowners.org.uk/events/{slug}" if slug else ""
+            url = (
+                (e.get("url") or "").strip() or tito_event_public_url(str(slug) if slug else None)
+            )
             banner_url = e.get("banner_url", "")
             status_text, status_emoji = get_event_status(e)
 
@@ -1053,11 +1510,14 @@ def build_index_html(
             category = categorize_event(e)
             region = get_event_region(e)
 
-            # Determine if upcoming
-            is_upcoming = start and (start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start) >= today
+            # All cards in this grid are upcoming (TBC dates still listed as upcoming)
+            is_upcoming = not start or (start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start) >= today
             status_badge = ""
             if is_upcoming and status_text:
-                status_badge = f'<span class="status-badge">{status_emoji} {status_text}</span>'
+                status_badge = (
+                    f'<span class="status-badge">{status_emoji} '
+                    f"{html.escape(status_text, quote=False)}</span>"
+                )
 
             # Category badge
             category_labels = {
@@ -1075,6 +1535,7 @@ def build_index_html(
                 "title": title,
                 "date": date_str,
                 "time": time_str,
+                "startIso": (e.get("start_at") or ""),
                 "location": location,
                 "description": description,
                 "url": url,
@@ -1087,16 +1548,20 @@ def build_index_html(
             # Enhanced event card with optional banner image
             banner_html = ""
             if banner_url and banner_url.startswith("http"):
-                banner_html = f'<div class="event-banner" style="background-image: url(\'{banner_url}\')"></div>'
+                safe_bg = str(banner_url).replace("'", "%27")
+                banner_html = (
+                    f'<div class="event-banner" style="background-image: url(\'{safe_bg}\')"></div>'
+                )
 
+            loc_short = location[:30] + ("..." if len(location) > 30 else "")
             featured_items.append(
                 f'<div class="featured-event {category}" data-event-idx="{idx}" data-category="{category}" data-region="{region}" onclick="showEventModal({idx})">'
                 f'{banner_html}'
                 f'<div class="event-content">'
-                f'<span class="date">{date_str}</span>'
+                f'<span class="date">{html.escape(date_str, quote=False)}</span>'
                 f'{category_badge}'
-                f'<span class="title">{title}</span>'
-                f'<span class="location-small">📍 {location[:30]}{"..." if len(location) > 30 else ""}</span>'
+                f'<span class="title">{html.escape(title, quote=False)}</span>'
+                f'<span class="location-small">📍 {html.escape(loc_short, quote=False)}</span>'
                 f'{status_badge}'
                 f'</div>'
                 f"</div>"
@@ -1114,19 +1579,26 @@ def build_index_html(
   <meta name="description" content="Subscribe to Tesla Owners UK events calendar - track days, meetups, AGMs and exhibitions. Never miss an event with automatic updates.">
   <meta name="keywords" content="Tesla, Tesla Owners UK, TOCUK, events, calendar, meetups, track days, AGM, Supercharged, Everything Electric">
   <meta name="author" content="evenwebb">
+  <link rel="canonical" href="{site_public_url}/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/">
+  <meta property="og:url" content="{site_public_url}/">
   <meta property="og:title" content="Tesla Owners UK Events Calendar">
   <meta property="og:description" content="Never miss a Tesla Owners UK event - subscribe once, stay updated forever. Track days, meetups, AGMs and exclusive gatherings.">
   <meta property="og:site_name" content="Tesla Owners UK Events">
+  <meta property="og:image" content="{og_image_url}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Tesla Owners UK Events Calendar">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/">
+  <meta name="twitter:url" content="{site_public_url}/">
   <meta name="twitter:title" content="Tesla Owners UK Events Calendar">
   <meta name="twitter:description" content="Never miss a Tesla Owners UK event - subscribe once, stay updated forever">
+  <meta name="twitter:image" content="{og_image_url}">
+  <meta name="twitter:image:alt" content="Tesla Owners UK Events Calendar">
 
   <!-- Mobile Theme Color -->
   <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: dark)">
@@ -1718,6 +2190,8 @@ def build_index_html(
           <button class="filter-chip" data-region="west" onclick="filterByRegion('west')">⬅️ West</button>
           <button class="filter-chip" data-region="online" onclick="filterByRegion('online')">💻 Online</button>
           <button class="filter-chip" data-region="international" onclick="filterByRegion('international')">🌍 International</button>
+          <button class="filter-chip" data-region="tbc" onclick="filterByRegion('tbc')">📌 Venue TBC</button>
+          <button class="filter-chip" data-region="other" onclick="filterByRegion('other')">📍 Other UK</button>
         </div>
       </div>
     </div>
@@ -1815,7 +2289,7 @@ def build_index_html(
       <p style="margin-top: 0.5rem;">
         <a href="archive.html">📁 Event Archive</a>
         <span aria-hidden="true"> · </span>
-        <a href="https://teslaowners.org.uk/events" target="_blank" rel="noopener">🔗 Official Events Page</a>
+        <a href="https://ti.to/teslaownersuk" target="_blank" rel="noopener">🔗 Tesla Owners UK on Ti.to</a>
         <span aria-hidden="true"> · </span>
         <a href="https://github.com/evenwebb/tesla-owners-club-uk-events-calendar" target="_blank" rel="noopener">⭐ GitHub</a>
       </p>
@@ -1856,29 +2330,55 @@ def build_index_html(
     document.documentElement.setAttribute('data-theme', savedTheme);
   }})();
 
-  // Update "Days Until Next Event" dynamically
+  // Next upcoming start: from embedded eventsData so the counter rolls forward without redeploy.
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  function nextUpcomingStartIso() {{
+    const now = Date.now();
+    let best = null;
+    let bestT = Infinity;
+    for (const ev of eventsData) {{
+      if (!ev.upcoming || !ev.startIso) continue;
+      const t = new Date(ev.startIso).getTime();
+      if (Number.isNaN(t) || t < now) continue;
+      if (t < bestT) {{ bestT = t; best = ev.startIso; }}
+    }}
+    return best;
+  }}
+
   function updateDaysUntil() {{
     const element = document.getElementById('daysUntilNext');
     if (!element) return;
 
-    const nextEventDate = element.getAttribute('data-next-event-date');
-    if (!nextEventDate) return;
+    const nextIso = nextUpcomingStartIso();
+    if (!nextIso) {{
+      element.textContent = '—';
+      element.removeAttribute('data-next-event-date');
+      return;
+    }}
+    element.setAttribute('data-next-event-date', nextIso);
 
-    const eventDate = new Date(nextEventDate);
-    const now = new Date();
-    const diffTime = eventDate - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const eventTime = new Date(nextIso).getTime();
+    if (Number.isNaN(eventTime)) {{
+      element.textContent = '—';
+      return;
+    }}
+
+    const diffMs = eventTime - Date.now();
+    const diffDays = Math.floor(diffMs / MS_PER_DAY);
 
     if (diffDays >= 0) {{
-      element.textContent = diffDays;
+      element.textContent = String(diffDays);
     }} else {{
       element.textContent = '—';
     }}
   }}
 
-  // Update countdown on page load and daily
   updateDaysUntil();
-  setInterval(updateDaysUntil, 1000 * 60 * 60); // Update every hour
+  setInterval(updateDaysUntil, 60 * 1000);
+  document.addEventListener('visibilitychange', function() {{
+    if (document.visibilityState === 'visible') updateDaysUntil();
+  }});
 
   // Update "Last updated" timestamp dynamically
   function updateHealthTimestamp() {{
@@ -2004,7 +2504,7 @@ def build_index_html(
 
   // Copy calendar URL to clipboard
   function copyCalendarURL() {{
-    const calendarURL = window.location.origin + '/tesla-owners-club-uk-events-calendar/tocuk.ics';
+    const calendarURL = new URL('{ics_url}', window.location.href).href;
     navigator.clipboard.writeText(calendarURL).then(() => {{
       const btn = event.currentTarget;
       const originalText = btn.textContent;
@@ -2080,11 +2580,16 @@ def build_index_html(
 </html>"""
 
 
-def build_archive_html(past_events: List[Dict[str, Any]]) -> str:
+def build_archive_html(
+    past_events: List[Dict[str, Any]],
+    site_public_url: Optional[str] = None,
+) -> str:
     """Build the archive HTML page with past events organized by year/month."""
+    site_base = (site_public_url or SITE_PUBLIC_URL).rstrip("/")
+    og_image_url = f"{site_base}/og-image.png"
     if not past_events:
         events_html = '<p class="no-events">No past events in archive yet.</p>'
-        return build_archive_template(events_html, 0)
+        return build_archive_template(events_html, 0, site_base, og_image_url)
 
     # Group by year and month
     events_by_year_month = {}
@@ -2110,29 +2615,46 @@ def build_archive_html(past_events: List[Dict[str, Any]]) -> str:
         events_list.sort(key=lambda x: x[1], reverse=True)
         for event, start in events_list:
             title = event.get("title", "Untitled Event")
-            location = event.get("location", "")
+            location = display_event_location(event.get("location"))
             date_str = start.strftime("%d %b %Y")
             slug = event.get("slug", "")
-            url = f"https://teslaowners.org.uk/events/{slug}" if slug else ""
+            url = (
+                (event.get("url") or "").strip()
+                or tito_event_public_url(str(slug) if slug else None)
+            )
 
-            location_html = f'<span class="location">{location}</span>' if location else ''
-            link_html = f'<a href="{url}" target="_blank" rel="noopener">View details →</a>' if url else ''
+            location_html = (
+                f'<span class="location">{html.escape(location, quote=False)}</span>'
+                if location
+                else ""
+            )
+            url_esc = html.escape(url, quote=True)
+            link_html = (
+                f'<a href="{url_esc}" target="_blank" rel="noopener">View details →</a>'
+                if url
+                else ""
+            )
 
             events_html += f'''
         <div class="archive-event">
-          <div class="archive-date">{date_str}</div>
+          <div class="archive-date">{html.escape(date_str, quote=False)}</div>
           <div class="archive-details">
-            <div class="archive-title">{title}</div>
+            <div class="archive-title">{html.escape(title, quote=False)}</div>
             {location_html}
           </div>
           {link_html}
         </div>'''
         events_html += '</div></div>'
 
-    return build_archive_template(events_html, len(past_events))
+    return build_archive_template(events_html, len(past_events), site_base, og_image_url)
 
 
-def build_archive_template(events_html: str, event_count: int) -> str:
+def build_archive_template(
+    events_html: str,
+    event_count: int,
+    site_base: str,
+    og_image_url: str,
+) -> str:
     """Build the archive page template."""
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -2148,16 +2670,20 @@ def build_archive_template(events_html: str, event_count: int) -> str:
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/archive.html">
+  <meta property="og:url" content="{site_base}/archive.html">
   <meta property="og:title" content="Event Archive – Tesla Owners UK">
   <meta property="og:description" content="Browse past Tesla Owners UK events and community gatherings">
   <meta property="og:site_name" content="Tesla Owners UK Events">
+  <meta property="og:image" content="{og_image_url}">
+  <meta property="og:image:alt" content="Tesla Owners UK Events Calendar">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:url" content="https://evenwebb.github.io/tesla-owners-club-uk-events-calendar/archive.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="{site_base}/archive.html">
   <meta name="twitter:title" content="Event Archive – Tesla Owners UK">
   <meta name="twitter:description" content="Browse past Tesla Owners UK events and community gatherings">
+  <meta name="twitter:image" content="{og_image_url}">
+  <meta name="twitter:image:alt" content="Tesla Owners UK Events Calendar">
 
   <!-- Mobile Theme Color -->
   <meta name="theme-color" content="#00d4ff" media="(prefers-color-scheme: dark)">
@@ -2283,21 +2809,34 @@ def build_archive_template(events_html: str, event_count: int) -> str:
 </html>"""
 
 
+def _enriched_upcoming_rows(enriched: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Rows treated as upcoming for skip-state + dashboard counts (by wall time)."""
+    today = datetime.datetime.now(datetime.timezone.utc)
+    out: List[Dict[str, Any]] = []
+    for e in enriched:
+        st = parse_iso_datetime(e.get("start_at"))
+        if not st:
+            if e.get("tito_bucket") in ("upcoming", "unscheduled"):
+                out.append(e)
+            continue
+        s = st.replace(tzinfo=datetime.timezone.utc) if st.tzinfo is None else st
+        if s >= today:
+            out.append(e)
+    return out
+
+
 def main() -> None:
     """Main function to scrape events and generate iCal file."""
     try:
-        logger.info("Fetching events from %s", EVENTS_URL)
-        response = fetch_with_retries(EVENTS_URL)
-        events = extract_events_from_page(response.text)
-
-        if not events:
+        list_rows = fetch_tito_event_rows()
+        if not list_rows:
             logger.warning("No events found")
             print("No events found.")
             save_health_status(
                 "error",
                 0,
-                "No events found on website",
-                "Event extraction returned empty list"
+                "No events found on Ti.to",
+                "Ti.to checkout JSON returned no events",
             )
             return
     except Exception as e:
@@ -2305,65 +2844,74 @@ def main() -> None:
         save_health_status(
             "error",
             0,
-            "Failed to fetch events from website",
-            str(e)
+            "Failed to fetch events from Ti.to",
+            str(e),
         )
         raise
 
-    # Split into future and past (keep all events for output)
-    today = datetime.datetime.now(datetime.timezone.utc)
-    future_events = []
-    past_events = []
-    for e in events:
-        start = parse_iso_datetime(e.get("start_at"))
-        if start:
-            if start.tzinfo is None:
-                start = start.replace(tzinfo=datetime.timezone.utc)
-            if start >= today:
-                future_events.append(e)
-            else:
-                past_events.append(e)
-        else:
-            future_events.append(e)  # No start = treat as future
+    past_rows = [r for r in list_rows if r.get("tito_bucket") == "past"]
+    future_rows = [r for r in list_rows if r.get("tito_bucket") != "past"]
+    all_events = past_rows + future_rows
 
-    # Skip full scrape if no NEW upcoming events (reduces GitHub Actions usage)
-    # Only update when an event is added; ignore events moving to past
-    current_upcoming_slugs = {e.get("slug") for e in future_events if e.get("slug")}
-    previous_slugs = load_last_upcoming_slugs()
-    if not has_new_events(current_upcoming_slugs, previous_slugs):
-        logger.info("No new events (current=%d, previous=%d), skipping full scrape", len(current_upcoming_slugs), len(previous_slugs))
-        print("No new events. Skipping update to reduce GitHub usage.")
-        # Update state file to reflect current upcoming events (important for when events move to past)
-        save_last_upcoming_slugs(list(current_upcoming_slugs))
-        # Update health status (no error, just no new events)
-        save_health_status(
-            "success",
-            len(current_upcoming_slugs),
-            f"No new events detected ({len(current_upcoming_slugs)} upcoming events)"
-        )
-        return
-
-    # All events to output: past first, then future (sorted by start date)
-    all_events = past_events + future_events
-    all_events.sort(key=lambda x: parse_iso_datetime(x.get("start_at", "")) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc))
-
-    # Fetch detail page for each event and merge (richer description, map coords, etc.)
+    # Fetch per-event ICS and merge into list rows (times, description, cancellation, etc.)
     cache = load_cache()
     enriched_events = []
     for event in all_events:
         slug = event.get("slug")
-        detail = fetch_event_detail(slug, cache) if slug else None
+        detail = (
+            fetch_event_detail(slug, cache, list_event=event) if slug else None
+        )
         enriched_events.append(merge_event_detail(event, detail))
     save_cache(cache)
 
+    enriched_events.sort(
+        key=lambda x: parse_iso_datetime(x.get("start_at", ""))
+        or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+    )
+    upcoming_enriched = _enriched_upcoming_rows(enriched_events)
+    today = datetime.datetime.now(datetime.timezone.utc)
+
     Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
-    # Generate iCal
+    # Generate iCal (upcoming only; SEQUENCE/DTSTAMP help clients apply updates to same UID)
+    seq_state = load_ical_sequence_state()
+    new_seq_state: Dict[str, Dict[str, Any]] = {}
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
     event_lines = []
     for event in enriched_events:
-        ical = make_ics_event(event)
+        start = parse_iso_datetime(event.get("start_at"))
+        if start:
+            s = start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start
+            if s < today:
+                continue
+
+        slug = str(event.get("slug") or "")
+        fp = ical_revision_fingerprint(event)
+        seq_n = 0
+        dts_utc = now_utc
+        if slug:
+            prev = seq_state.get(slug)
+            if not prev:
+                seq_n = 0
+                dts_utc = now_utc
+            elif str(prev.get("fp")) != fp:
+                seq_n = int(prev.get("seq", 0)) + 1
+                dts_utc = now_utc
+            else:
+                seq_n = int(prev.get("seq", 0))
+                dts_utc = _parse_ical_z_datetime(str(prev.get("dtstamp", ""))) or now_utc
+
+        ical = make_ics_event(event, sequence=seq_n, dtstamp_utc=dts_utc)
         if ical:
             event_lines.append(ical)
+            if slug:
+                new_seq_state[slug] = {
+                    "seq": seq_n,
+                    "fp": fp,
+                    "dtstamp": _format_ical_datetime(dts_utc),
+                }
+
+    save_ical_sequence_state(new_seq_state)
 
     ical_content = (
         "BEGIN:VCALENDAR\n"
@@ -2380,28 +2928,32 @@ def main() -> None:
     ics_path.write_text(ical_content, encoding="utf-8")
     logger.info("Wrote %s (%d events)", ics_path, len(event_lines))
 
-    # Save current upcoming slugs for next run comparison (reuse from earlier)
-    save_last_upcoming_slugs(list(current_upcoming_slugs))
+    save_last_upcoming_state(build_upcoming_state(upcoming_enriched))
 
     # Save health status
     save_health_status(
         "success",
         len(event_lines),
-        f"Successfully processed {len(event_lines)} events ({len(current_upcoming_slugs)} upcoming)"
+        f"Successfully processed {len(event_lines)} iCal event(s) ({len(upcoming_enriched)} upcoming on site)",
     )
 
     # Generate index with health status
     health_status = load_health_status()
     index_path = Path(OUTPUT_DIR) / "index.html"
     index_path.write_text(
-        build_index_html(enriched_events, upcoming_count=len(current_upcoming_slugs), health_status=health_status),
-        encoding="utf-8"
+        build_index_html(
+            enriched_events,
+            upcoming_count=len(upcoming_enriched),
+            health_status=health_status,
+            site_public_url=SITE_PUBLIC_URL,
+        ),
+        encoding="utf-8",
     )
     logger.info("Wrote %s", index_path)
 
+    write_seo_files(SITE_PUBLIC_URL)
+
     # Generate archive page with past events
-    # Filter enriched events to get only past ones
-    today = datetime.datetime.now(datetime.timezone.utc)
     past_enriched = []
     for e in enriched_events:
         start = parse_iso_datetime(e.get("start_at"))
@@ -2411,14 +2963,19 @@ def main() -> None:
                 past_enriched.append(e)
 
     archive_path = Path(OUTPUT_DIR) / "archive.html"
-    archive_path.write_text(build_archive_html(past_enriched), encoding="utf-8")
+    archive_path.write_text(
+        build_archive_html(past_enriched, site_public_url=SITE_PUBLIC_URL),
+        encoding="utf-8",
+    )
     logger.info("Wrote %s with %d past events", archive_path, len(past_enriched))
 
     print(f"\n✓ Created {OUTPUT_DIR}/ with tocuk.ics ({len(event_lines)} events), index.html, and archive.html\n")
     for event in enriched_events:
         start = parse_iso_datetime(event.get("start_at"))
         date_str = start.strftime("%d %B %Y %H:%M") if start else "?"
-        print(f"  • {event.get('title')} – {date_str} @ {event.get('location', 'TBC')}")
+        print(
+            f"  • {event.get('title')} – {date_str} @ {display_event_location(event.get('location'))}"
+        )
 
 
 if __name__ == "__main__":

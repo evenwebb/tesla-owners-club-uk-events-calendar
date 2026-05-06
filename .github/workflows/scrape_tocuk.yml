@@ -1,7 +1,7 @@
 name: Scrape Tesla Owners UK Events
 
-# Streamlined: only fetches main page first; skips full scrape when no new events.
-# Saves GitHub Actions minutes on free tier.
+# Fetches Ti.to checkout JSON + per-event ICS each run so cancellations and
+# schedule changes always propagate to subscribers (SEQUENCE / DTSTAMP).
 on:
   schedule:
     # Run weekly on Mondays at 09:00 UTC
@@ -30,6 +30,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run scraper
+        env:
+          # Optional: override when GitHub Pages is not at evenwebb/tesla-owners-club-uk-events-calendar
+          CALENDAR_SITE_URL: ${{ vars.CALENDAR_SITE_URL }}
         run: |
           python tocuk_scraper.py || {
             echo "Transient failure, retrying in 10 seconds..."
