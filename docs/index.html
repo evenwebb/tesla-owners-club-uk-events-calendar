@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tesla Owners UK – Events Calendar</title>
+  <title>Tesla Owners UK: Events Calendar</title>
 
   <!-- SEO Meta Tags -->
   <meta name="description" content="Subscribe to Tesla Owners UK events calendar - track days, meetups, AGMs and exhibitions. Never miss an event with automatic updates.">
@@ -735,13 +735,13 @@
     <header class="hero">
       <div class="badge">Tesla Owners UK · Live Calendar</div>
       <h1>Tesla Owners UK Events</h1>
-      <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
+      <p class="tagline">Never miss a Tesla Owners UK event: track days, meetups, AGMs, and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 
     <div class="health-status success">
       <div class="health-icon">✅</div>
       <div class="health-info">
-        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="2026-05-06T22:03:05.483684+00:00">0 minutes ago</span></div>
+        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="2026-05-06T22:19:15.063869+00:00">0 minutes ago</span></div>
         <div class="health-message">Successfully processed 7 iCal event(s) (7 upcoming on site)</div>
         
       </div>
@@ -896,7 +896,7 @@
         </div>
       </div>
 
-      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added — no need to re-subscribe!</p>
+      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added, so no need to re-subscribe!</p>
     </section>
 
     <footer>
@@ -906,7 +906,7 @@
         <a href="https://ts.la/steven201536" target="_blank" rel="noopener" class="referral-link">Claim Your Tesla Benefits →</a>
       </div>
 
-      <p style="margin-top: 1.5rem;">Created by <a href="https://github.com/evenwebb" target="_blank" rel="noopener">evenwebb</a> — Tesla owner & fan 🔋</p>
+      <p style="margin-top: 1.5rem;">Created by <a href="https://github.com/evenwebb" target="_blank" rel="noopener">evenwebb</a>, Tesla owner & fan 🔋</p>
       <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
         <a href="archive.html">📁 Event Archive</a>
@@ -974,7 +974,7 @@
 
     const nextIso = nextUpcomingStartIso();
     if (!nextIso) {
-      element.textContent = '—';
+      element.textContent = '-';
       element.removeAttribute('data-next-event-date');
       return;
     }
@@ -982,7 +982,7 @@
 
     const eventTime = new Date(nextIso).getTime();
     if (Number.isNaN(eventTime)) {
-      element.textContent = '—';
+      element.textContent = '-';
       return;
     }
 
@@ -992,7 +992,7 @@
     if (diffDays >= 0) {
       element.textContent = String(diffDays);
     } else {
-      element.textContent = '—';
+      element.textContent = '-';
     }
   }
 
