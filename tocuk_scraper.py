@@ -59,7 +59,6 @@ TBC_LOCATION_PHRASES = frozenset(
         "n/a",
         "na",
         "none",
-        "—",
         "-",
         "venue tbc",
         "venue tba",
@@ -507,7 +506,7 @@ def is_tbc_location_value(location: Optional[str]) -> bool:
     s = str(location).strip()
     if not s:
         return True
-    low = s.lower().rstrip(".")
+    low = s.lower().rstrip(".").replace("\u2014", "-")
     if low in TBC_LOCATION_PHRASES:
         return True
     return False
@@ -1081,7 +1080,7 @@ def make_ics_event(
         desc_parts.append(f"\nSource list: {tito_bucket}")
     if source_dtstamp:
         desc_parts.append(f"\nTi.to DTSTAMP: {source_dtstamp}")
-    desc_parts.append(f"\nTesla Owners UK – {TITO_PUBLIC_BASE}")
+    desc_parts.append(f"\nTesla Owners UK: {TITO_PUBLIC_BASE}")
     desc_parts.append(f"\nClub site: {CLUB_PUBLIC_URL}/")
     description_text = "\n".join(desc_parts)
 
@@ -1573,7 +1572,7 @@ def build_index_html(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tesla Owners UK – Events Calendar</title>
+  <title>Tesla Owners UK: Events Calendar</title>
 
   <!-- SEO Meta Tags -->
   <meta name="description" content="Subscribe to Tesla Owners UK events calendar - track days, meetups, AGMs and exhibitions. Never miss an event with automatic updates.">
@@ -2127,7 +2126,7 @@ def build_index_html(
     <header class="hero">
       <div class="badge">Tesla Owners UK · Live Calendar</div>
       <h1>Tesla Owners UK Events</h1>
-      <p class="tagline">Never miss a Tesla Owners UK event — track days, meetups, AGMs and exclusive gatherings. Subscribe once, stay updated forever.</p>
+      <p class="tagline">Never miss a Tesla Owners UK event: track days, meetups, AGMs, and exclusive gatherings. Subscribe once, stay updated forever.</p>
     </header>
 {health_html}
     <!-- Stats Dashboard -->
@@ -2137,7 +2136,7 @@ def build_index_html(
         <div class="stat-label">Upcoming Events</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="daysUntilNext" data-next-event-date="{stats.get('next_event_date', '')}">{stats['days_until'] if stats['days_until'] is not None else '—'}</div>
+        <div class="stat-number" id="daysUntilNext" data-next-event-date="{stats.get('next_event_date', '')}">{stats['days_until'] if stats['days_until'] is not None else '-'}</div>
         <div class="stat-label">Days Until Next Event</div>
       </div>
       <div class="stat-card">
@@ -2274,7 +2273,7 @@ def build_index_html(
         </div>
       </div>
 
-      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added — no need to re-subscribe!</p>
+      <p class="howto-footer">ℹ️ The calendar updates automatically when new events are added, so no need to re-subscribe!</p>
     </section>
 
     <footer>
@@ -2284,7 +2283,7 @@ def build_index_html(
         <a href="https://ts.la/steven201536" target="_blank" rel="noopener" class="referral-link">Claim Your Tesla Benefits →</a>
       </div>
 
-      <p style="margin-top: 1.5rem;">Created by <a href="https://github.com/evenwebb" target="_blank" rel="noopener">evenwebb</a> — Tesla owner & fan 🔋</p>
+      <p style="margin-top: 1.5rem;">Created by <a href="https://github.com/evenwebb" target="_blank" rel="noopener">evenwebb</a>, Tesla owner & fan 🔋</p>
       <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">An open source fan-made project. Not affiliated with Tesla Owners UK Limited.</p>
       <p style="margin-top: 0.5rem;">
         <a href="archive.html">📁 Event Archive</a>
@@ -2352,7 +2351,7 @@ def build_index_html(
 
     const nextIso = nextUpcomingStartIso();
     if (!nextIso) {{
-      element.textContent = '—';
+      element.textContent = '-';
       element.removeAttribute('data-next-event-date');
       return;
     }}
@@ -2360,7 +2359,7 @@ def build_index_html(
 
     const eventTime = new Date(nextIso).getTime();
     if (Number.isNaN(eventTime)) {{
-      element.textContent = '—';
+      element.textContent = '-';
       return;
     }}
 
@@ -2370,7 +2369,7 @@ def build_index_html(
     if (diffDays >= 0) {{
       element.textContent = String(diffDays);
     }} else {{
-      element.textContent = '—';
+      element.textContent = '-';
     }}
   }}
 
@@ -2661,7 +2660,7 @@ def build_archive_template(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Archive – Tesla Owners UK Events Calendar</title>
+  <title>Archive: Tesla Owners UK Events Calendar</title>
 
   <!-- SEO Meta Tags -->
   <meta name="description" content="Browse past Tesla Owners UK events - track days, meetups, AGMs and exhibitions. Archive of completed community gatherings.">
@@ -2671,7 +2670,7 @@ def build_archive_template(
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="{site_base}/archive.html">
-  <meta property="og:title" content="Event Archive – Tesla Owners UK">
+  <meta property="og:title" content="Event Archive: Tesla Owners UK">
   <meta property="og:description" content="Browse past Tesla Owners UK events and community gatherings">
   <meta property="og:site_name" content="Tesla Owners UK Events">
   <meta property="og:image" content="{og_image_url}">
@@ -2680,7 +2679,7 @@ def build_archive_template(
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="{site_base}/archive.html">
-  <meta name="twitter:title" content="Event Archive – Tesla Owners UK">
+  <meta name="twitter:title" content="Event Archive: Tesla Owners UK">
   <meta name="twitter:description" content="Browse past Tesla Owners UK events and community gatherings">
   <meta name="twitter:image" content="{og_image_url}">
   <meta name="twitter:image:alt" content="Tesla Owners UK Events Calendar">
@@ -2974,7 +2973,7 @@ def main() -> None:
         start = parse_iso_datetime(event.get("start_at"))
         date_str = start.strftime("%d %B %Y %H:%M") if start else "?"
         print(
-            f"  • {event.get('title')} – {date_str} @ {display_event_location(event.get('location'))}"
+            f"  • {event.get('title')}, {date_str} @ {display_event_location(event.get('location'))}"
         )
 
 
