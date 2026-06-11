@@ -1222,14 +1222,15 @@ def categorize_event(event: Dict[str, Any]) -> str:
     location = event.get("location", "").lower()
     combined = f"{title} {description} {location}"
 
-    # Check for specific event types
-    if "agm" in title or "annual general meeting" in title:
+    # Check for specific event types (use word boundaries to avoid substring matches)
+    _w_combined = f" {combined} "
+    if re.search(r"\bagm\b", title) or "annual general meeting" in title:
         return "agm"
-    elif "online" in location or "virtual" in combined or "zoom" in combined:
+    elif "online" in location or "virtual" in combined or re.search(r"\bzoom\b", combined):
         return "online"
-    elif any(word in combined for word in ["track day", "circuit", "racing"]):
+    elif any(re.search(rf"\b{re.escape(w)}\b", combined) for w in ["track day", "circuit", "racing"]):
         return "track-day"
-    elif any(word in combined for word in ["everything electric", "fully charged", "exhibition", "show", "supercharged"]):
+    elif any(f" {w} " in _w_combined for w in ["everything electric", "fully charged", "exhibition", "show", "supercharged"]):
         return "exhibition"
     elif any(country in location for country in ["texas", "europe", "austria", "germany", "france", "spain", "italy"]):
         return "international"
@@ -1265,11 +1266,11 @@ def get_event_region(event: Dict[str, Any]) -> str:
         return "south"
 
     # Midlands
-    if any(place in location for place in ["midlands", "birmingham", "nottingham", "leicester", "derby", "cheltenham", "gloucester"]):
+    if any(place in location for place in ["midlands", "birmingham", "nottingham", "leicester", "derby"]):
         return "midlands"
 
     # West
-    if any(place in location for place in ["cheltenham", "bristol", "bath", "gloucester"]):
+    if any(place in location for place in ["cheltenham", "bristol", "bath", "gloucester", "swindon"]):
         return "west"
 
     return "other"
@@ -1547,7 +1548,7 @@ def build_index_html(
             # Enhanced event card with optional banner image
             banner_html = ""
             if banner_url and banner_url.startswith("http"):
-                safe_bg = str(banner_url).replace("'", "%27")
+                safe_bg = str(banner_url).replace("'", "%27").replace('"', "%22").replace("(", "%28").replace(")", "%29").replace("\\", "%5C")
                 banner_html = (
                     f'<div class="event-banner" style="background-image: url(\'{safe_bg}\')"></div>'
                 )
@@ -2879,10 +2880,10 @@ def main() -> None:
     event_lines = []
     for event in enriched_events:
         start = parse_iso_datetime(event.get("start_at"))
+        is_past = False
         if start:
             s = start.replace(tzinfo=datetime.timezone.utc) if start.tzinfo is None else start
-            if s < today:
-                continue
+            is_past = s < today
 
         slug = str(event.get("slug") or "")
         fp = ical_revision_fingerprint(event)
@@ -2900,32 +2901,67 @@ def main() -> None:
                 seq_n = int(prev.get("seq", 0))
                 dts_utc = _parse_ical_z_datetime(str(prev.get("dtstamp", ""))) or now_utc
 
+        # Track SEQUENCE for ALL events to prevent resets on past→upcoming transition
+        if slug:
+            new_seq_state[slug] = {
+                "seq": seq_n,
+                "fp": fp,
+                "dtstamp": _format_ical_datetime(dts_utc),
+            }
+
+        if is_past:
+            continue
+
         ical = make_ics_event(event, sequence=seq_n, dtstamp_utc=dts_utc)
         if ical:
             event_lines.append(ical)
-            if slug:
-                new_seq_state[slug] = {
-                    "seq": seq_n,
-                    "fp": fp,
-                    "dtstamp": _format_ical_datetime(dts_utc),
-                }
 
     save_ical_sequence_state(new_seq_state)
 
+    _NL = "\r\n"
     ical_content = (
-        "BEGIN:VCALENDAR\n"
-        "VERSION:2.0\n"
-        "PRODID:-//Tesla Owners UK//Events Calendar//EN\n"
-        "CALSCALE:GREGORIAN\n"
-        "X-WR-CALNAME:Tesla Owners UK Events\n"
-        "X-WR-CALDESC:Upcoming events from Tesla Owners UK\n"
+        f"BEGIN:VCALENDAR{_NL}"
+        f"VERSION:2.0{_NL}"
+        f"PRODID:-//Tesla Owners UK//Events Calendar//EN{_NL}"
+        f"CALSCALE:GREGORIAN{_NL}"
+        f"X-WR-CALNAME:Tesla Owners UK Events{_NL}"
+        f"X-WR-CALDESC:Upcoming events from Tesla Owners UK{_NL}"
         + "".join(event_lines)
-        + "END:VCALENDAR\n"
+        + f"END:VCALENDAR{_NL}"
     )
 
     ics_path = Path(OUTPUT_DIR) / "tocuk.ics"
-    ics_path.write_text(ical_content, encoding="utf-8")
+    tmp_path = ics_path.with_suffix(".tmp")
+    tmp_path.write_text(ical_content, encoding="utf-8")
+    tmp_path.replace(ics_path)
     logger.info("Wrote %s (%d events)", ics_path, len(event_lines))
+
+    # Region-filtered ICS feeds (#22)
+    region_events: Dict[str, list] = {}
+    for i, event in enumerate(upcoming_enriched):
+        region = get_event_region(event)
+        ical = make_ics_event(event, sequence=int(new_seq_state.get(str(event.get("slug") or ""), {}).get("seq", 0)),
+                              dtstamp_utc=_parse_ical_z_datetime(str(new_seq_state.get(str(event.get("slug") or ""), {}).get("dtstamp", ""))) or now_utc)
+        if ical:
+            region_events.setdefault(region, []).append(ical)
+    for region, lines in region_events.items():
+        if region in ("unknown", "tbc", "other"):
+            continue
+        region_ical = (
+            f"BEGIN:VCALENDAR{_NL}"
+            f"VERSION:2.0{_NL}"
+            f"PRODID:-//Tesla Owners UK//{region.title()} Events//EN{_NL}"
+            f"CALSCALE:GREGORIAN{_NL}"
+            f"X-WR-CALNAME:TOCUK {region.title()} Events{_NL}"
+            f"X-WR-CALDESC:Tesla Owners UK events in the {region.title()} region{_NL}"
+            + "".join(lines)
+            + f"END:VCALENDAR{_NL}"
+        )
+        region_path = Path(OUTPUT_DIR) / f"tocuk-{region}.ics"
+        region_tmp = region_path.with_suffix(".tmp")
+        region_tmp.write_text(region_ical, encoding="utf-8")
+        region_tmp.replace(region_path)
+    logger.info("Wrote %d region ICS files", len([r for r in region_events if r not in ("unknown", "tbc", "other")]))
 
     save_last_upcoming_state(build_upcoming_state(upcoming_enriched))
 
@@ -2978,4 +3014,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.error("Unexpected error in main: %s", e)
+        save_health_status("error", 0, "Scraper crashed during processing", str(e))
+        raise
