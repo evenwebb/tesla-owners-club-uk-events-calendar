@@ -799,12 +799,12 @@ _PAGE_JS = """\
   })();
 """
 
-def write_asset_files(out_dir):
+def write_asset_files(out_dir, events_json_data=None):
     """Write external CSS and JS files for browser caching."""
     p = __import__('pathlib').Path(out_dir)
     p.mkdir(parents=True, exist_ok=True)
     (p / "style.css").write_text(_PAGE_CSS, encoding="utf-8")
-    (p / "script.js").write_text(_PAGE_JS, encoding="utf-8")
+    (p / "script.js").write_text(_PAGE_JS.replace("{json.dumps(events_json_data)}", json.dumps(events_json_data or [])), encoding="utf-8")
 
 
 
@@ -2395,289 +2395,7 @@ def build_index_html(
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">rder: 1px solid var(--border);
-      display: inline-block;
-      margin-top: 0.25rem;
-      width: fit-content;
-    }}
-    .category-badge {{
-      font-size: 0.65rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-weight: 600;
-      width: fit-content;
-      display: inline-block;
-    }}
-    .category-badge.track-day {{ background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.4); }}
-    .category-badge.meetup {{ background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }}
-    .category-badge.agm {{ background: rgba(10, 132, 255, 0.2); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.4); }}
-    .category-badge.exhibition {{ background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.4); }}
-    .category-badge.online {{ background: rgba(94, 92, 230, 0.2); color: #5e5ce6; border: 1px solid rgba(94, 92, 230, 0.4); }}
-    .category-badge.international {{ background: rgba(191, 90, 242, 0.2); color: #bf5af2; border: 1px solid rgba(191, 90, 242, 0.4); }}
-    .featured-event.hidden {{ display: none; }}
-    .stats-dashboard {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin: 2rem 0;
-    }}
-    .stat-card {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1.25rem;
-      text-align: center;
-    }}
-    .stat-number {{
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 1;
-      margin-bottom: 0.5rem;
-    }}
-    .stat-label {{
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }}
-    .quick-add-buttons {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-      margin: 1.5rem 0;
-    }}
-    .btn {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      font-family: inherit;
-    }}
-    .btn-primary {{
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-    }}
-    .btn-secondary {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }}
-    .btn:hover {{
-      transform: scale(1.02);
-      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
-    }}
-    .subscribe-hint {{
-      text-align: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 1rem;
-    }}
-    .filter-section {{
-      margin: 2rem 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-    }}
-    .filter-group {{
-      margin-bottom: 1.5rem;
-    }}
-    .filter-group:last-child {{ margin-bottom: 0; }}
-    .filter-label {{
-      display: block;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-      color: var(--text);
-    }}
-    .filter-chips {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }}
-    .filter-chip {{
-      padding: 0.5rem 1rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--text);
-      font-family: inherit;
-    }}
-    .filter-chip:hover {{
-      background: var(--surface);
-      border-color: var(--accent);
-    }}
-    .filter-chip.active {{
-      background: var(--accent);
-      color: var(--bg);
-      border-color: var(--accent);
-    }}
-    @media (max-width: 640px) {{
-      .stats-dashboard {{ grid-template-columns: 1fr 1fr; }}
-      .quick-add-buttons {{ flex-direction: column; }}
-      .btn {{ width: 100%; }}
-    }}
-    .health-status {{
-      background: transparent;
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 0;
-      margin: 0.75rem 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      opacity: 0.6;
-    }}
-    .health-status.success {{ opacity: 0.6; }}
-    .health-status.warning {{ opacity: 0.7; }}
-    .health-status.error {{ opacity: 0.8; }}
-    .health-icon {{ font-size: 0.9rem; }}
-    .health-info {{ flex: 1; }}
-    .health-main {{ font-weight: 400; }}
-    .health-message {{ font-size: 0.75rem; color: var(--text-muted); margin-top: 0; }}
-    .health-error {{ font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }}
-    .howto-section {{ margin: 3rem 0; }}
-    .howto-section h2 {{ font-size: 1.25rem; margin-bottom: 0.5rem; }}
-    .howto-intro {{ color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }}
-    .howto-footer {{
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: var(--surface-2);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      text-align: center;
-      color: var(--text-muted);
-    }}
-    .accordion-group {{ display: flex; flex-direction: column; gap: 0.5rem; }}
-    .accordion-button {{
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      width: 100%;
-      padding: 1rem 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s;
-    }}
-    .accordion-button:hover {{
-      background: var(--surface-2);
-      border-color: var(--accent);
-    }}
-    .accordion-button[aria-expanded="true"] {{
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-      border-bottom-color: transparent;
-    }}
-    .accordion-icon {{ font-size: 1.25rem; }}
-    .accordion-title {{ flex: 1; }}
-    .accordion-chevron {{
-      font-size: 0.75rem;
-      transition: transform 0.2s;
-    }}
-    .accordion-button[aria-expanded="true"] .accordion-chevron {{
-      transform: rotate(180deg);
-    }}
-    .accordion-content {{
-      display: none;
-      padding: 1.5rem 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-bottom-left-radius: var(--radius-sm);
-      border-bottom-right-radius: var(--radius-sm);
-      margin-bottom: 0.5rem;
-    }}
-    .accordion-content.active {{ display: block; }}
-    .instructions-list {{
-      margin: 0.75rem 0;
-      padding-left: 1.5rem;
-      line-height: 1.8;
-    }}
-    .instructions-list li {{ margin-bottom: 0.5rem; }}
-    .instructions-list strong {{ color: var(--accent); }}
-    .instructions-list a {{ color: var(--cyan); text-decoration: none; }}
-    .instructions-list a:hover {{ text-decoration: underline; }}
-    .note {{
-      margin-top: 1rem;
-      padding: 0.75rem;
-      background: var(--surface-2);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }}
-    footer {{
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      margin-top: 3rem;
-    }}
-    footer a {{ color: var(--cyan); text-decoration: none; }}
-    footer a:hover {{ text-decoration: underline; }}
-
-    .referral-cta {{
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(229, 62, 62, 0.1));
-      border: 1px solid rgba(0, 212, 255, 0.3);
-      border-radius: var(--radius-sm);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }}
-    .referral-title {{
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }}
-    .referral-text {{
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }}
-    .referral-note {{
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      font-size: 0.75rem;
-      opacity: 0.7;
-    }}
-    .referral-link {{
-      display: inline-block;
-      background: var(--cyan);
-      color: var(--bg);
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      text-decoration: none !important;
-      transition: all 0.2s ease;
-    }}
-    .referral-link:hover {{
-      background: #00b8e6;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-    }}
-  </style>
+  <link rel="stylesheet" href="style.css">
 
   <!-- Structured Data (JSON-LD) for SEO -->
   {generate_json_ld(events)}
@@ -2872,7 +2590,6 @@ def build_index_html(
   </div>
 
   <script src="script.js" defer></script>
-  </script>
 </body>
 </html>"""
 
@@ -3271,7 +2988,7 @@ def main() -> None:
 
     # Generate index with health status
     health_status = load_health_status()
-    write_asset_files(OUTPUT_DIR)
+    write_asset_files(OUTPUT_DIR, events_json_data)
     index_path = Path(OUTPUT_DIR) / "index.html"
     index_path.write_text(
         build_index_html(
