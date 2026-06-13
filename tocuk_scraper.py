@@ -20,6 +20,794 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+# ── External CSS/JS assets (written to docs/ at build time) ──────────────────
+_PAGE_CSS = """\
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a24;
+      --border: rgba(0,212,255,0.25);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --cyan: #00d4ff;
+      --red: #e53935;
+      --accent: #00d4ff;
+      --accent-dim: rgba(0,212,255,0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --surface-2: #e9ecef;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-muted: #6c757d;
+      --accent-dim: rgba(0,212,255,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
+    }
+    .page { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .search-box::placeholder { color: var(--text-muted); }
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .theme-toggle:hover { transform: scale(1.05); }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.5rem;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-title { font-size: 1.5rem; margin-bottom: 1rem; padding-right: 2rem; }
+    .modal-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .modal-meta strong { color: var(--accent); }
+    .modal-description { line-height: 1.7; margin-bottom: 1.5rem; }
+    .modal-link {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+    .modal-link:hover { opacity: 0.9; }
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+    }
+    .hero .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .hero .tagline { color: var(--text-muted); font-size: 1rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .card h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .card .meta { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .card .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card .btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+    }
+    .featured-section { margin: 3rem 0; }
+    .featured-section h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .featured-event {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .featured-event:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
+    }
+    .event-banner {
+      width: 100%;
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--surface-2);
+    }
+    .event-content {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+    }
+    .featured-event .date {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      display: block;
+    }
+    .featured-event .title {
+      font-weight: 500;
+      line-height: 1.3;
+      margin: 0.25rem 0;
+    }
+    .featured-event .location-small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+    .featured-event .status-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: inline-block;
+      margin-top: 0.25rem;
+      width: fit-content;
+    }
+    .category-badge {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      width: fit-content;
+      display: inline-block;
+    }
+    .category-badge.track-day { background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.4); }
+    .category-badge.meetup { background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }
+    .category-badge.agm { background: rgba(10, 132, 255, 0.2); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.4); }
+    .category-badge.exhibition { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.4); }
+    .category-badge.online { background: rgba(94, 92, 230, 0.2); color: #5e5ce6; border: 1px solid rgba(94, 92, 230, 0.4); }
+    .category-badge.international { background: rgba(191, 90, 242, 0.2); color: #bf5af2; border: 1px solid rgba(191, 90, 242, 0.4); }
+    .featured-event.hidden { display: none; }
+    .stats-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .quick-add-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), #a855f7);
+      color: var(--bg);
+    }
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+    }
+    .subscribe-hint {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+    }
+    .filter-section {
+      margin: 2rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .filter-group {
+      margin-bottom: 1.5rem;
+    }
+    .filter-group:last-child { margin-bottom: 0; }
+    .filter-label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+      font-family: inherit;
+    }
+    .filter-chip:hover {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
+    .filter-chip.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    @media (max-width: 640px) {
+      .stats-dashboard { grid-template-columns: 1fr 1fr; }
+      .quick-add-buttons { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+    .health-status {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0;
+      margin: 0.75rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+    .health-status.success { opacity: 0.6; }
+    .health-status.warning { opacity: 0.7; }
+    .health-status.error { opacity: 0.8; }
+    .health-icon { font-size: 0.9rem; }
+    .health-info { flex: 1; }
+    .health-main { font-weight: 400; }
+    .health-message { font-size: 0.75rem; color: var(--text-muted); margin-top: 0; }
+    .health-error { font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }
+    .howto-section { margin: 3rem 0; }
+    .howto-section h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .howto-intro { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .howto-footer {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .accordion-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .accordion-button {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .accordion-button:hover {
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }
+    .accordion-button[aria-expanded="true"] {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-color: transparent;
+    }
+    .accordion-icon { font-size: 1.25rem; }
+    .accordion-title { flex: 1; }
+    .accordion-chevron {
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+    .accordion-button[aria-expanded="true"] .accordion-chevron {
+      transform: rotate(180deg);
+    }
+    .accordion-content {
+      display: none;
+      padding: 1.5rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: var(--radius-sm);
+      border-bottom-right-radius: var(--radius-sm);
+      margin-bottom: 0.5rem;
+    }
+    .accordion-content.active { display: block; }
+    .instructions-list {
+      margin: 0.75rem 0;
+      padding-left: 1.5rem;
+      line-height: 1.8;
+    }
+    .instructions-list li { margin-bottom: 0.5rem; }
+    .instructions-list strong { color: var(--accent); }
+    .instructions-list a { color: var(--cyan); text-decoration: none; }
+    .instructions-list a:hover { text-decoration: underline; }
+    .note {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-2);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 3rem;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .referral-cta {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(229, 62, 62, 0.1));
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .referral-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .referral-text {
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .referral-note {
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    .referral-link {
+      display: inline-block;
+      background: var(--cyan);
+      color: var(--bg);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      text-decoration: none !important;
+      transition: all 0.2s ease;
+    }
+    .referral-link:hover {
+      background: #00b8e6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+"""
+
+_PAGE_JS = """\
+  // Event data
+  const eventsData = {json.dumps(events_json_data)};
+
+  // Dark mode toggle
+  function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  }
+
+  // Load saved theme
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+
+  // Next upcoming start: from embedded eventsData so the counter rolls forward without redeploy.
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  function nextUpcomingStartIso() {
+    const now = Date.now();
+    let best = null;
+    let bestT = Infinity;
+    for (const ev of eventsData) {
+      if (!ev.upcoming || !ev.startIso) continue;
+      const t = new Date(ev.startIso).getTime();
+      if (Number.isNaN(t) || t < now) continue;
+      if (t < bestT) { bestT = t; best = ev.startIso; }
+    }
+    return best;
+  }
+
+  function updateDaysUntil() {
+    const element = document.getElementById('daysUntilNext');
+    if (!element) return;
+
+    const nextIso = nextUpcomingStartIso();
+    if (!nextIso) {
+      element.textContent = '-';
+      element.removeAttribute('data-next-event-date');
+      return;
+    }
+    element.setAttribute('data-next-event-date', nextIso);
+
+    const eventTime = new Date(nextIso).getTime();
+    if (Number.isNaN(eventTime)) {
+      element.textContent = '-';
+      return;
+    }
+
+    const diffMs = eventTime - Date.now();
+    const diffDays = Math.floor(diffMs / MS_PER_DAY);
+
+    if (diffDays >= 0) {
+      element.textContent = String(diffDays);
+    } else {
+      element.textContent = '-';
+    }
+  }
+
+  updateDaysUntil();
+  setInterval(updateDaysUntil, 60 * 1000);
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') updateDaysUntil();
+  });
+
+  // Update "Last updated" timestamp dynamically
+  function updateHealthTimestamp() {
+    const element = document.getElementById('healthTimestamp');
+    if (!element) return;
+
+    const timestamp = element.getAttribute('data-timestamp');
+    if (!timestamp) return;
+
+    const updateTime = new Date(timestamp);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - updateTime) / 1000);
+
+    let timeAgo;
+    if (diffSeconds < 60) {
+      timeAgo = 'just now';
+    } else if (diffSeconds < 3600) {
+      const mins = Math.floor(diffSeconds / 60);
+      timeAgo = `${mins} minute${mins > 1 ? 's' : ''} ago`;
+    } else if (diffSeconds < 86400) {
+      const hours = Math.floor(diffSeconds / 3600);
+      timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffSeconds / 86400);
+      timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    element.textContent = timeAgo;
+  }
+
+  // Update health timestamp on page load and every minute
+  updateHealthTimestamp();
+  setInterval(updateHealthTimestamp, 1000 * 60); // Update every minute
+
+  // Filter state
+  let activeCategory = 'all';
+  let activeRegion = 'all';
+
+  // Filter events
+  function filterEvents() {
+    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+    const eventCards = document.querySelectorAll('.featured-event');
+    let visibleCount = 0;
+
+    eventCards.forEach((card, idx) => {
+      const event = eventsData[idx];
+      const matchesSearch = !searchTerm ||
+        event.title.toLowerCase().includes(searchTerm) ||
+        event.location.toLowerCase().includes(searchTerm) ||
+        event.description.toLowerCase().includes(searchTerm);
+
+      const matchesCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
+      const matchesRegion = activeRegion === 'all' || card.dataset.region === activeRegion;
+
+      if (matchesSearch && matchesCategory && matchesRegion) {
+        card.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Update count
+    const countSpan = document.getElementById('eventCount');
+    if (searchTerm || activeCategory !== 'all' || activeRegion !== 'all') {
+      countSpan.textContent = `({visibleCount} shown)`;
+    } else {
+      countSpan.textContent = '';
+    }
+  }
+
+  // Show event modal
+  function showEventModal(idx) {
+    const event = eventsData[idx];
+    document.getElementById('modalTitle').textContent = event.title;
+    document.getElementById('modalDate').textContent = event.date;
+    document.getElementById('modalTime').textContent = event.time || 'TBA';
+    document.getElementById('modalLocation').textContent = event.location || 'TBA';
+    document.getElementById('modalDescription').textContent = event.description || 'No description available.';
+    document.getElementById('modalLink').href = event.url || '#';
+
+    if (!event.url) {
+      document.getElementById('modalLink').style.display = 'none';
+    } else {
+      document.getElementById('modalLink').style.display = 'inline-block';
+    }
+
+    document.getElementById('eventModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Close modal
+  function closeModal() {
+    document.getElementById('eventModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Escape key closes modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Accordion toggle
+  function toggleAccordion(id) {
+    const button = event.currentTarget;
+    const content = document.getElementById('accordion-' + id);
+    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+    // Close all accordions
+    document.querySelectorAll('.accordion-button').forEach(btn => {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('.accordion-content').forEach(content => {
+      content.classList.remove('active');
+    });
+
+    // Toggle current
+    if (!isExpanded) {
+      button.setAttribute('aria-expanded', 'true');
+      content.classList.add('active');
+    }
+  }
+
+  // Copy calendar URL to clipboard
+  function copyCalendarURL() {
+    const calendarURL = new URL('{ics_url}', window.location.href).href;
+    navigator.clipboard.writeText(calendarURL).then(() => {
+      const btn = event.currentTarget;
+      const originalText = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(34, 197, 94, 0.2)';
+      btn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy URL. Please copy manually: ' + calendarURL);
+    });
+  }
+
+  // Filter by category
+  function filterByCategory(category) {
+    activeCategory = category;
+
+    // Update chip styles
+    document.querySelectorAll('.filter-chip[data-category]').forEach(chip => {
+      if (chip.dataset.category === category) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+
+    filterEvents();
+  }
+
+  // Filter by region
+  function filterByRegion(region) {
+    activeRegion = region;
+
+    // Update chip styles
+    document.querySelectorAll('.filter-chip[data-region]').forEach(chip => {
+      if (chip.dataset.region === region) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+
+    filterEvents();
+  }
+
+  // Device-specific calendar link handling
+  (function() {
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
+    var isAndroid = /Android/.test(ua);
+
+    document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {
+      var href = link.getAttribute('href');
+      if (!href) return;
+      var abs = new URL(href, window.location.href).href;
+
+      if (isIOS || isMac) {
+        // Use webcal:// protocol for Apple devices
+        link.href = abs.replace(/^https?:\\/\\//, 'webcal://');
+      } else if (isAndroid) {
+        // Use Google Calendar render URL for Android
+        link.href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(abs);
+      }
+    });
+  })();
+"""
+
+def write_asset_files(out_dir):
+    """Write external CSS and JS files for browser caching."""
+    p = __import__('pathlib').Path(out_dir)
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "style.css").write_text(_PAGE_CSS, encoding="utf-8")
+    (p / "script.js").write_text(_PAGE_JS, encoding="utf-8")
+
+
+
 # ============================================================================
 # CONSTANTS
 # ============================================================================
@@ -1607,235 +2395,7 @@ def build_index_html(
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {{
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface-2: #1a1a24;
-      --border: rgba(0,212,255,0.25);
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --cyan: #00d4ff;
-      --red: #e53935;
-      --accent: #00d4ff;
-      --accent-dim: rgba(0,212,255,0.15);
-      --radius: 16px;
-      --radius-sm: 10px;
-    }}
-    [data-theme="light"] {{
-      --bg: #ffffff;
-      --surface: #f8f9fa;
-      --surface-2: #e9ecef;
-      --border: rgba(0,0,0,0.1);
-      --text: #1a1a1a;
-      --text-muted: #6c757d;
-      --accent-dim: rgba(0,212,255,0.1);
-    }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-      transition: background 0.3s, color 0.3s;
-    }}
-    .page {{ max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }}
-    .controls {{
-      display: flex;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      flex-wrap: wrap;
-    }}
-    .search-box {{
-      flex: 1;
-      min-width: 200px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.95rem;
-    }}
-    .search-box::placeholder {{ color: var(--text-muted); }}
-    .theme-toggle {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 1.2rem;
-      transition: transform 0.2s;
-    }}
-    .theme-toggle:hover {{ transform: scale(1.05); }}
-    .modal {{
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      padding: 2rem;
-      overflow-y: auto;
-    }}
-    .modal.active {{ display: flex; align-items: center; justify-content: center; }}
-    .modal-content {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      max-width: 600px;
-      width: 100%;
-      position: relative;
-    }}
-    .modal-close {{
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.5rem;
-      line-height: 1;
-    }}
-    .modal-close:hover {{ color: var(--text); }}
-    .modal-title {{ font-size: 1.5rem; margin-bottom: 1rem; padding-right: 2rem; }}
-    .modal-meta {{
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }}
-    .modal-meta strong {{ color: var(--accent); }}
-    .modal-description {{ line-height: 1.7; margin-bottom: 1.5rem; }}
-    .modal-link {{
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-    }}
-    .modal-link:hover {{ opacity: 0.9; }}
-    .hero {{
-      text-align: center;
-      padding: 3rem 0 2rem;
-    }}
-    .hero .badge {{
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-dim);
-      padding: 0.4rem 1rem;
-      border-radius: 100px;
-      margin-bottom: 1rem;
-    }}
-    .hero h1 {{
-      font-size: clamp(1.75rem, 5vw, 2.5rem);
-      font-weight: 800;
-      margin-bottom: 0.75rem;
-    }}
-    .hero .tagline {{ color: var(--text-muted); font-size: 1rem; }}
-    .card {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      margin: 2rem 0;
-      text-align: center;
-    }}
-    .card h2 {{ font-size: 1.25rem; margin-bottom: 1rem; }}
-    .card .meta {{ color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }}
-    .card .btn {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-      font-weight: 600;
-      font-size: 1rem;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }}
-    .card .btn:hover {{
-      transform: scale(1.02);
-      box-shadow: 0 4px 20px rgba(0,212,255,0.3);
-    }}
-    .featured-section {{ margin: 3rem 0; }}
-    .featured-section h2 {{ font-size: 1.25rem; margin-bottom: 1rem; }}
-    .featured-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-    }}
-    .featured-event {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }}
-    .featured-event:hover {{
-      transform: translateY(-2px);
-      border-color: var(--accent);
-      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
-    }}
-    .event-banner {{
-      width: 100%;
-      height: 120px;
-      background-size: cover;
-      background-position: center;
-      background-color: var(--surface-2);
-    }}
-    .event-content {{
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-    }}
-    .featured-event .date {{
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 600;
-      display: block;
-    }}
-    .featured-event .title {{
-      font-weight: 500;
-      line-height: 1.3;
-      margin: 0.25rem 0;
-    }}
-    .featured-event .location-small {{
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      display: block;
-    }}
-    .featured-event .status-badge {{
-      font-size: 0.7rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
+  <link rel="stylesheet" href="style.css">rder: 1px solid var(--border);
       display: inline-block;
       margin-top: 0.25rem;
       width: fit-content;
@@ -2311,270 +2871,7 @@ def build_index_html(
     </div>
   </div>
 
-  <script>
-  // Event data
-  const eventsData = {json.dumps(events_json_data)};
-
-  // Dark mode toggle
-  function toggleTheme() {{
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  }}
-
-  // Load saved theme
-  (function() {{
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }})();
-
-  // Next upcoming start: from embedded eventsData so the counter rolls forward without redeploy.
-  const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-  function nextUpcomingStartIso() {{
-    const now = Date.now();
-    let best = null;
-    let bestT = Infinity;
-    for (const ev of eventsData) {{
-      if (!ev.upcoming || !ev.startIso) continue;
-      const t = new Date(ev.startIso).getTime();
-      if (Number.isNaN(t) || t < now) continue;
-      if (t < bestT) {{ bestT = t; best = ev.startIso; }}
-    }}
-    return best;
-  }}
-
-  function updateDaysUntil() {{
-    const element = document.getElementById('daysUntilNext');
-    if (!element) return;
-
-    const nextIso = nextUpcomingStartIso();
-    if (!nextIso) {{
-      element.textContent = '-';
-      element.removeAttribute('data-next-event-date');
-      return;
-    }}
-    element.setAttribute('data-next-event-date', nextIso);
-
-    const eventTime = new Date(nextIso).getTime();
-    if (Number.isNaN(eventTime)) {{
-      element.textContent = '-';
-      return;
-    }}
-
-    const diffMs = eventTime - Date.now();
-    const diffDays = Math.floor(diffMs / MS_PER_DAY);
-
-    if (diffDays >= 0) {{
-      element.textContent = String(diffDays);
-    }} else {{
-      element.textContent = '-';
-    }}
-  }}
-
-  updateDaysUntil();
-  setInterval(updateDaysUntil, 60 * 1000);
-  document.addEventListener('visibilitychange', function() {{
-    if (document.visibilityState === 'visible') updateDaysUntil();
-  }});
-
-  // Update "Last updated" timestamp dynamically
-  function updateHealthTimestamp() {{
-    const element = document.getElementById('healthTimestamp');
-    if (!element) return;
-
-    const timestamp = element.getAttribute('data-timestamp');
-    if (!timestamp) return;
-
-    const updateTime = new Date(timestamp);
-    const now = new Date();
-    const diffSeconds = Math.floor((now - updateTime) / 1000);
-
-    let timeAgo;
-    if (diffSeconds < 60) {{
-      timeAgo = 'just now';
-    }} else if (diffSeconds < 3600) {{
-      const mins = Math.floor(diffSeconds / 60);
-      timeAgo = `${{mins}} minute${{mins > 1 ? 's' : ''}} ago`;
-    }} else if (diffSeconds < 86400) {{
-      const hours = Math.floor(diffSeconds / 3600);
-      timeAgo = `${{hours}} hour${{hours > 1 ? 's' : ''}} ago`;
-    }} else {{
-      const days = Math.floor(diffSeconds / 86400);
-      timeAgo = `${{days}} day${{days > 1 ? 's' : ''}} ago`;
-    }}
-
-    element.textContent = timeAgo;
-  }}
-
-  // Update health timestamp on page load and every minute
-  updateHealthTimestamp();
-  setInterval(updateHealthTimestamp, 1000 * 60); // Update every minute
-
-  // Filter state
-  let activeCategory = 'all';
-  let activeRegion = 'all';
-
-  // Filter events
-  function filterEvents() {{
-    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    const eventCards = document.querySelectorAll('.featured-event');
-    let visibleCount = 0;
-
-    eventCards.forEach((card, idx) => {{
-      const event = eventsData[idx];
-      const matchesSearch = !searchTerm ||
-        event.title.toLowerCase().includes(searchTerm) ||
-        event.location.toLowerCase().includes(searchTerm) ||
-        event.description.toLowerCase().includes(searchTerm);
-
-      const matchesCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
-      const matchesRegion = activeRegion === 'all' || card.dataset.region === activeRegion;
-
-      if (matchesSearch && matchesCategory && matchesRegion) {{
-        card.classList.remove('hidden');
-        visibleCount++;
-      }} else {{
-        card.classList.add('hidden');
-      }}
-    }});
-
-    // Update count
-    const countSpan = document.getElementById('eventCount');
-    if (searchTerm || activeCategory !== 'all' || activeRegion !== 'all') {{
-      countSpan.textContent = `({{visibleCount}} shown)`;
-    }} else {{
-      countSpan.textContent = '';
-    }}
-  }}
-
-  // Show event modal
-  function showEventModal(idx) {{
-    const event = eventsData[idx];
-    document.getElementById('modalTitle').textContent = event.title;
-    document.getElementById('modalDate').textContent = event.date;
-    document.getElementById('modalTime').textContent = event.time || 'TBA';
-    document.getElementById('modalLocation').textContent = event.location || 'TBA';
-    document.getElementById('modalDescription').textContent = event.description || 'No description available.';
-    document.getElementById('modalLink').href = event.url || '#';
-
-    if (!event.url) {{
-      document.getElementById('modalLink').style.display = 'none';
-    }} else {{
-      document.getElementById('modalLink').style.display = 'inline-block';
-    }}
-
-    document.getElementById('eventModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }}
-
-  // Close modal
-  function closeModal() {{
-    document.getElementById('eventModal').classList.remove('active');
-    document.body.style.overflow = '';
-  }}
-
-  // Escape key closes modal
-  document.addEventListener('keydown', function(e) {{
-    if (e.key === 'Escape') closeModal();
-  }});
-
-  // Accordion toggle
-  function toggleAccordion(id) {{
-    const button = event.currentTarget;
-    const content = document.getElementById('accordion-' + id);
-    const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-    // Close all accordions
-    document.querySelectorAll('.accordion-button').forEach(btn => {{
-      btn.setAttribute('aria-expanded', 'false');
-    }});
-    document.querySelectorAll('.accordion-content').forEach(content => {{
-      content.classList.remove('active');
-    }});
-
-    // Toggle current
-    if (!isExpanded) {{
-      button.setAttribute('aria-expanded', 'true');
-      content.classList.add('active');
-    }}
-  }}
-
-  // Copy calendar URL to clipboard
-  function copyCalendarURL() {{
-    const calendarURL = new URL('{ics_url}', window.location.href).href;
-    navigator.clipboard.writeText(calendarURL).then(() => {{
-      const btn = event.currentTarget;
-      const originalText = btn.textContent;
-      btn.textContent = '✓ Copied!';
-      btn.style.background = 'rgba(34, 197, 94, 0.2)';
-      btn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
-      setTimeout(() => {{
-        btn.textContent = originalText;
-        btn.style.background = '';
-        btn.style.borderColor = '';
-      }}, 2000);
-    }}).catch(err => {{
-      console.error('Failed to copy:', err);
-      alert('Failed to copy URL. Please copy manually: ' + calendarURL);
-    }});
-  }}
-
-  // Filter by category
-  function filterByCategory(category) {{
-    activeCategory = category;
-
-    // Update chip styles
-    document.querySelectorAll('.filter-chip[data-category]').forEach(chip => {{
-      if (chip.dataset.category === category) {{
-        chip.classList.add('active');
-      }} else {{
-        chip.classList.remove('active');
-      }}
-    }});
-
-    filterEvents();
-  }}
-
-  // Filter by region
-  function filterByRegion(region) {{
-    activeRegion = region;
-
-    // Update chip styles
-    document.querySelectorAll('.filter-chip[data-region]').forEach(chip => {{
-      if (chip.dataset.region === region) {{
-        chip.classList.add('active');
-      }} else {{
-        chip.classList.remove('active');
-      }}
-    }});
-
-    filterEvents();
-  }}
-
-  // Device-specific calendar link handling
-  (function() {{
-    var ua = navigator.userAgent || '';
-    var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
-    var isAndroid = /Android/.test(ua);
-
-    document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {{
-      var href = link.getAttribute('href');
-      if (!href) return;
-      var abs = new URL(href, window.location.href).href;
-
-      if (isIOS || isMac) {{
-        // Use webcal:// protocol for Apple devices
-        link.href = abs.replace(/^https?:\\/\\//, 'webcal://');
-      }} else if (isAndroid) {{
-        // Use Google Calendar render URL for Android
-        link.href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(abs);
-      }}
-    }});
-  }})();
+  <script src="script.js" defer></script>
   </script>
 </body>
 </html>"""
@@ -2974,6 +3271,7 @@ def main() -> None:
 
     # Generate index with health status
     health_status = load_health_status()
+    write_asset_files(OUTPUT_DIR)
     index_path = Path(OUTPUT_DIR) / "index.html"
     index_path.write_text(
         build_index_html(
