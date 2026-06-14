@@ -5,43 +5,8 @@ CALSCALE:GREGORIAN
 X-WR-CALNAME:Tesla Owners UK Events
 X-WR-CALDESC:Upcoming events from Tesla Owners UK
 BEGIN:VEVENT
-UID:4xrPRw@checkout.tito.io
-DTSTAMP:20260608T130514Z
-SEQUENCE:0
-DTSTART:20260611T230000Z
-DTEND:20260613T230000Z
-SUMMARY:Everything Electric West
-DESCRIPTION:Everything Electric's next show is at the new West of England v
- enue of Cheltenham Racecourse on 12 and 13 June. We will again have a club
-  presence so do pop by and have a chat with our club volunteers and pick u
- p a copy of the new Year Book. For our paid supporters\, please log into y
- our TOUK account to obtain your free ticket worth £15\n\nListing: June 12t
- h–13th\, 2026\n\nWall clock / source TZ: Europe/London\n\nEvent & tickets 
- (Ti.to): https://ti.to/teslaownersuk/everything-electric-west\n\nSource li
- st: upcoming\n\nTi.to DTSTAMP: 2026-06-08T13:05:10+00:00\n\nTesla Owners U
- K: https://ti.to/teslaownersuk\n\nClub site: https://teslaowners.uk/
-CREATED:20251216T175158Z
-LAST-MODIFIED:20260523T112842Z
-LOCATION:Cheltenham Racecourse
-URL:https://ti.to/teslaownersuk/everything-electric-west
-ORGANIZER;CN=Tesla Owners UK:mailto:events@teslaowners.org.uk
-CONTACT:mailto:events@teslaowners.org.uk
-COMMENT:Timezone: Europe/London
-COMMENT:Date: June 12th–13th\, 2026
-COMMENT:Ti.to listing: June 12th–13th\, 2026
-COMMENT:Ti.to bucket: upcoming
-CATEGORIES:Tesla Owners UK,Event
-CLASS:PUBLIC
-TRANSP:OPAQUE
-STATUS:CONFIRMED
-ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg
-RESOURCES:Cheltenham Racecourse
-X-TIMEZONE:Europe/London
-X-TITO-SLUG:everything-electric-west
-END:VEVENT
-BEGIN:VEVENT
 UID:IhaohQ@checkout.tito.io
-DTSTAMP:20260608T130514Z
+DTSTAMP:20260614T112919Z
 SEQUENCE:1
 DTSTART:20260627T090000Z
 DTEND:20260627T160000Z
@@ -117,7 +82,7 @@ DESCRIPTION:The 2026 edition of the Tesla Owners UK national member event w
   crash (which was filmed in the Alpine Course). No dogs permitted on site.
  \n\nListing: June 27th\, 2026\n\nWall clock / source TZ: Europe/London\n\n
  Event & tickets (Ti.to): https://ti.to/teslaownersuk/supercharged-2026\n\n
- Source list: upcoming\n\nTi.to DTSTAMP: 2026-06-08T13:05:11+00:00\n\nTesla
+ Source list: upcoming\n\nTi.to DTSTAMP: 2026-06-14T11:29:16+00:00\n\nTesla
   Owners UK: https://ti.to/teslaownersuk\n\nClub site: https://teslaowners.
  uk/
 CREATED:20251216T171953Z
@@ -141,7 +106,7 @@ X-TITO-SLUG:supercharged-2026
 END:VEVENT
 BEGIN:VEVENT
 UID:LDrpLg@checkout.tito.io
-DTSTAMP:20260608T130514Z
+DTSTAMP:20260614T112919Z
 SEQUENCE:0
 DTSTART:20260820T230000Z
 DTEND:20260823T230000Z
@@ -160,7 +125,7 @@ DESCRIPTION:Tesla Owners UK is delighted to have been invited to have a clu
  t on a great display and a chance to show off your car.\n\nListing: August
   21st–23rd\, 2026\n\nWall clock / source TZ: Europe/London\n\nEvent & tick
  ets (Ti.to): https://ti.to/teslaownersuk/tesla-owners-at-the-british-motor
- -show-2026\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-06-08T13:05:12+
+ -show-2026\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-06-14T11:29:17+
  00:00\n\nTesla Owners UK: https://ti.to/teslaownersuk\n\nClub site: https:
  //teslaowners.uk/
 CREATED:20260413T172527Z
@@ -184,7 +149,7 @@ X-TITO-SLUG:tesla-owners-at-the-british-motor-show-2026
 END:VEVENT
 BEGIN:VEVENT
 UID:vhrwsQ@checkout.tito.io
-DTSTAMP:20260608T130514Z
+DTSTAMP:20260614T112919Z
 SEQUENCE:0
 DTSTART:20260911T080000Z
 DTEND:20260912T150000Z
@@ -194,8 +159,8 @@ DESCRIPTION:Everything Electric's last UK show of 2026 is at the new London
  our TOUK account after the summer to obtain your free ticket worth £15\n\n
  Listing: September 11th–12th\, 2026\n\nWall clock / source TZ: Europe/Lond
  on\n\nEvent & tickets (Ti.to): https://ti.to/teslaownersuk/everything-elec
- tric-west-copy\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-06-08T13:05
- :13+00:00\n\nTesla Owners UK: https://ti.to/teslaownersuk\n\nClub site: ht
+ tric-west-copy\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-06-14T11:29
+ :18+00:00\n\nTesla Owners UK: https://ti.to/teslaownersuk\n\nClub site: ht
  tps://teslaowners.uk/
 CREATED:20260527T132633Z
 LAST-MODIFIED:20260527T133228Z
@@ -218,7 +183,7 @@ X-TITO-SLUG:everything-electric-west-copy
 END:VEVENT
 BEGIN:VEVENT
 UID:Ojyfzw@checkout.tito.io
-DTSTAMP:20260608T130514Z
+DTSTAMP:20260614T112919Z
 SEQUENCE:0
 DTSTART:20261019T103000Z
 DTEND:20261019T123000Z
@@ -234,7 +199,7 @@ DESCRIPTION:Tesla has invited the official owners club of the United Kingdo
  visit for TOUK members.\n\nListing: October 19th\, 2026\n\nWall clock / so
  urce TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to/teslaowne
  rsuk/tesla-gigafactory-berlin-tour-2026\n\nSource list: upcoming\n\nTi.to 
- DTSTAMP: 2026-06-08T13:05:14+00:00\n\nTesla Owners UK: https://ti.to/tesla
+ DTSTAMP: 2026-06-14T11:29:19+00:00\n\nTesla Owners UK: https://ti.to/tesla
  ownersuk\n\nClub site: https://teslaowners.uk/
 CREATED:20240130T100607Z
 LAST-MODIFIED:20260602T181015Z

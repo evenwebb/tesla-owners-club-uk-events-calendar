@@ -1,7 +1,7 @@
 {
-  "status": "success",
-  "last_update": "2026-06-08T13:05:14.294815+00:00",
-  "event_count": 5,
-  "message": "Successfully processed 5 iCal event(s) (5 upcoming on site)",
-  "error": null
+  "status": "error",
+  "last_update": "2026-06-14T11:29:19.636906+00:00",
+  "event_count": 0,
+  "message": "Scraper crashed during processing",
+  "error": "name 'events_json_data' is not defined"
 }
