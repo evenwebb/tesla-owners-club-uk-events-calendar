@@ -37,546 +37,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface-2: #1a1a24;
-      --border: rgba(0,212,255,0.25);
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --cyan: #00d4ff;
-      --red: #e53935;
-      --accent: #00d4ff;
-      --accent-dim: rgba(0,212,255,0.15);
-      --radius: 16px;
-      --radius-sm: 10px;
-    }
-    [data-theme="light"] {
-      --bg: #ffffff;
-      --surface: #f8f9fa;
-      --surface-2: #e9ecef;
-      --border: rgba(0,0,0,0.1);
-      --text: #1a1a1a;
-      --text-muted: #6c757d;
-      --accent-dim: rgba(0,212,255,0.1);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-      transition: background 0.3s, color 0.3s;
-    }
-    .page { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-    .controls {
-      display: flex;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      flex-wrap: wrap;
-    }
-    .search-box {
-      flex: 1;
-      min-width: 200px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.95rem;
-    }
-    .search-box::placeholder { color: var(--text-muted); }
-    .theme-toggle {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 1.2rem;
-      transition: transform 0.2s;
-    }
-    .theme-toggle:hover { transform: scale(1.05); }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      padding: 2rem;
-      overflow-y: auto;
-    }
-    .modal.active { display: flex; align-items: center; justify-content: center; }
-    .modal-content {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      max-width: 600px;
-      width: 100%;
-      position: relative;
-    }
-    .modal-close {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.5rem;
-      line-height: 1;
-    }
-    .modal-close:hover { color: var(--text); }
-    .modal-title { font-size: 1.5rem; margin-bottom: 1rem; padding-right: 2rem; }
-    .modal-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-    .modal-meta strong { color: var(--accent); }
-    .modal-description { line-height: 1.7; margin-bottom: 1.5rem; }
-    .modal-link {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-    }
-    .modal-link:hover { opacity: 0.9; }
-    .hero {
-      text-align: center;
-      padding: 3rem 0 2rem;
-    }
-    .hero .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-dim);
-      padding: 0.4rem 1rem;
-      border-radius: 100px;
-      margin-bottom: 1rem;
-    }
-    .hero h1 {
-      font-size: clamp(1.75rem, 5vw, 2.5rem);
-      font-weight: 800;
-      margin-bottom: 0.75rem;
-    }
-    .hero .tagline { color: var(--text-muted); font-size: 1rem; }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      margin: 2rem 0;
-      text-align: center;
-    }
-    .card h2 { font-size: 1.25rem; margin-bottom: 1rem; }
-    .card .meta { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
-    .card .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-      font-weight: 600;
-      font-size: 1rem;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card .btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 20px rgba(0,212,255,0.3);
-    }
-    .featured-section { margin: 3rem 0; }
-    .featured-section h2 { font-size: 1.25rem; margin-bottom: 1rem; }
-    .featured-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-    }
-    .featured-event {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-    .featured-event:hover {
-      transform: translateY(-2px);
-      border-color: var(--accent);
-      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
-    }
-    .event-banner {
-      width: 100%;
-      height: 120px;
-      background-size: cover;
-      background-position: center;
-      background-color: var(--surface-2);
-    }
-    .event-content {
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-    }
-    .featured-event .date {
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 600;
-      display: block;
-    }
-    .featured-event .title {
-      font-weight: 500;
-      line-height: 1.3;
-      margin: 0.25rem 0;
-    }
-    .featured-event .location-small {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      display: block;
-    }
-    .featured-event .status-badge {
-      font-size: 0.7rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      display: inline-block;
-      margin-top: 0.25rem;
-      width: fit-content;
-    }
-    .category-badge {
-      font-size: 0.65rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-weight: 600;
-      width: fit-content;
-      display: inline-block;
-    }
-    .category-badge.track-day { background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.4); }
-    .category-badge.meetup { background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }
-    .category-badge.agm { background: rgba(10, 132, 255, 0.2); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.4); }
-    .category-badge.exhibition { background: rgba(255, 149, 0, 0.2); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.4); }
-    .category-badge.online { background: rgba(94, 92, 230, 0.2); color: #5e5ce6; border: 1px solid rgba(94, 92, 230, 0.4); }
-    .category-badge.international { background: rgba(191, 90, 242, 0.2); color: #bf5af2; border: 1px solid rgba(191, 90, 242, 0.4); }
-    .featured-event.hidden { display: none; }
-    .stats-dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1.25rem;
-      text-align: center;
-    }
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 1;
-      margin-bottom: 0.5rem;
-    }
-    .stat-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .quick-add-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-      margin: 1.5rem 0;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      font-family: inherit;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--cyan), #a855f7);
-      color: var(--bg);
-    }
-    .btn-secondary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-    .btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
-    }
-    .subscribe-hint {
-      text-align: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 1rem;
-    }
-    .filter-section {
-      margin: 2rem 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-    }
-    .filter-group {
-      margin-bottom: 1.5rem;
-    }
-    .filter-group:last-child { margin-bottom: 0; }
-    .filter-label {
-      display: block;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-      color: var(--text);
-    }
-    .filter-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .filter-chip {
-      padding: 0.5rem 1rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--text);
-      font-family: inherit;
-    }
-    .filter-chip:hover {
-      background: var(--surface);
-      border-color: var(--accent);
-    }
-    .filter-chip.active {
-      background: var(--accent);
-      color: var(--bg);
-      border-color: var(--accent);
-    }
-    @media (max-width: 640px) {
-      .stats-dashboard { grid-template-columns: 1fr 1fr; }
-      .quick-add-buttons { flex-direction: column; }
-      .btn { width: 100%; }
-    }
-    .health-status {
-      background: transparent;
-      border: none;
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 0;
-      margin: 0.75rem 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.75rem;
-      opacity: 0.6;
-    }
-    .health-status.success { opacity: 0.6; }
-    .health-status.warning { opacity: 0.7; }
-    .health-status.error { opacity: 0.8; }
-    .health-icon { font-size: 0.9rem; }
-    .health-info { flex: 1; }
-    .health-main { font-weight: 400; }
-    .health-message { font-size: 0.75rem; color: var(--text-muted); margin-top: 0; }
-    .health-error { font-size: 0.85rem; color: #ef4444; margin-top: 0.25rem; }
-    .howto-section { margin: 3rem 0; }
-    .howto-section h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-    .howto-intro { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
-    .howto-footer {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: var(--surface-2);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      text-align: center;
-      color: var(--text-muted);
-    }
-    .accordion-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .accordion-button {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      width: 100%;
-      padding: 1rem 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 1rem;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .accordion-button:hover {
-      background: var(--surface-2);
-      border-color: var(--accent);
-    }
-    .accordion-button[aria-expanded="true"] {
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-      border-bottom-color: transparent;
-    }
-    .accordion-icon { font-size: 1.25rem; }
-    .accordion-title { flex: 1; }
-    .accordion-chevron {
-      font-size: 0.75rem;
-      transition: transform 0.2s;
-    }
-    .accordion-button[aria-expanded="true"] .accordion-chevron {
-      transform: rotate(180deg);
-    }
-    .accordion-content {
-      display: none;
-      padding: 1.5rem 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-bottom-left-radius: var(--radius-sm);
-      border-bottom-right-radius: var(--radius-sm);
-      margin-bottom: 0.5rem;
-    }
-    .accordion-content.active { display: block; }
-    .instructions-list {
-      margin: 0.75rem 0;
-      padding-left: 1.5rem;
-      line-height: 1.8;
-    }
-    .instructions-list li { margin-bottom: 0.5rem; }
-    .instructions-list strong { color: var(--accent); }
-    .instructions-list a { color: var(--cyan); text-decoration: none; }
-    .instructions-list a:hover { text-decoration: underline; }
-    .note {
-      margin-top: 1rem;
-      padding: 0.75rem;
-      background: var(--surface-2);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-    footer {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      margin-top: 3rem;
-    }
-    footer a { color: var(--cyan); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    .referral-cta {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(229, 62, 62, 0.1));
-      border: 1px solid rgba(0, 212, 255, 0.3);
-      border-radius: var(--radius-sm);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .referral-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
-    .referral-text {
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-    .referral-note {
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      font-size: 0.75rem;
-      opacity: 0.7;
-    }
-    .referral-link {
-      display: inline-block;
-      background: var(--cyan);
-      color: var(--bg);
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      text-decoration: none !important;
-      transition: all 0.2s ease;
-    }
-    .referral-link:hover {
-      background: #00b8e6;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 
   <!-- Structured Data (JSON-LD) for SEO -->
   <script type="application/ld+json">
 [
-  {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    "name": "Everything Electric West",
-    "startDate": "2026-06-12T00:00:00+01:00",
-    "description": "Everything Electric's next show is at the new West of England venue of Cheltenham Racecourse on 12 and 13 June. We will again have a club presence so do pop by and have a chat with our club volunteers",
-    "eventStatus": "https://schema.org/EventScheduled",
-    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-    "organizer": {
-      "@type": "Organization",
-      "name": "Tesla Owners UK",
-      "url": "https://teslaowners.uk"
-    },
-    "endDate": "2026-06-14T00:00:00+01:00",
-    "location": {
-      "@type": "Place",
-      "name": "Cheltenham Racecourse",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Cheltenham Racecourse"
-      }
-    },
-    "image": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg",
-    "url": "https://ti.to/teslaownersuk/everything-electric-west"
-  },
   {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -691,30 +156,30 @@
     <div class="health-status success">
       <div class="health-icon">✅</div>
       <div class="health-info">
-        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="2026-06-08T13:05:14.294815+00:00">0 minutes ago</span></div>
-        <div class="health-message">Successfully processed 5 iCal event(s) (5 upcoming on site)</div>
+        <div class="health-main">Last updated: <span id="healthTimestamp" data-timestamp="2026-06-14T15:45:11.438490+00:00">0 minutes ago</span></div>
+        <div class="health-message">Successfully processed 4 iCal event(s) (4 upcoming on site)</div>
         
       </div>
     </div>
     <!-- Stats Dashboard -->
     <section class="stats-dashboard">
       <div class="stat-card">
-        <div class="stat-number">5</div>
+        <div class="stat-number">4</div>
         <div class="stat-label">Upcoming Events</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="daysUntilNext" data-next-event-date="2026-06-12T00:00:00+01:00">3</div>
+        <div class="stat-number" id="daysUntilNext" data-next-event-date="2026-06-27T10:00:00+01:00">12</div>
         <div class="stat-label">Days Until Next Event</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">5</div>
+        <div class="stat-number">6</div>
         <div class="stat-label">Past Events</div>
       </div>
     </section>
 
     <section class="card">
       <h2>Subscribe to the calendar</h2>
-      <p class="meta">5 upcoming events</p>
+      <p class="meta">4 upcoming events</p>
 
       <!-- Quick Add Buttons -->
       <div class="quick-add-buttons">
@@ -765,11 +230,10 @@
     <section class="featured-section">
       <h2>Upcoming events <span id="eventCount"></span></h2>
       <div class="featured-grid" id="eventGrid">
-        <div class="featured-event exhibition" data-event-idx="0" data-category="exhibition" data-region="midlands" onclick="showEventModal(0)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg')"></div><div class="event-content"><span class="date">12 Jun 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric West</span><span class="location-small">📍 Cheltenham Racecourse</span></div></div>
-        <div class="featured-event track-day" data-event-idx="1" data-category="track-day" data-region="other" onclick="showEventModal(1)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/610ecd58c48ef40bc859ff5a59324102.jpg')"></div><div class="event-content"><span class="date">27 Jun 2026</span><span class="category-badge track-day">🏁 Track Day</span><span class="title">Supercharged 2026</span><span class="location-small">📍 Millbrook Proving Ground, Bedf...</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="2" data-category="exhibition" data-region="other" onclick="showEventModal(2)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1161029/13eed5f78da0deab010f6cbb7d817713.webp')"></div><div class="event-content"><span class="date">21 Aug 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Tesla Owners at the British Motor Show 2026</span><span class="location-small">📍 Farnbrorough</span></div></div>
-        <div class="featured-event exhibition" data-event-idx="3" data-category="exhibition" data-region="other" onclick="showEventModal(3)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1162351/0cf6ed09cca63238b266c1672fee021c.jpeg')"></div><div class="event-content"><span class="date">11 Sep 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric Greater London</span><span class="location-small">📍 Allianz Stadium</span></div></div>
-        <div class="featured-event meetup" data-event-idx="4" data-category="meetup" data-region="other" onclick="showEventModal(4)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1137783/79002ad586a9b59826b63474da581323.jpg')"></div><div class="event-content"><span class="date">19 Oct 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Gigafactory Berlin Tour 2026</span><span class="location-small">📍 Tesla Gigafactory Berlin-Brand...</span></div></div>
+        <div class="featured-event track-day" data-event-idx="0" data-category="track-day" data-region="other" onclick="showEventModal(0)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/610ecd58c48ef40bc859ff5a59324102.jpg')"></div><div class="event-content"><span class="date">27 Jun 2026</span><span class="category-badge track-day">🏁 Track Day</span><span class="title">Supercharged 2026</span><span class="location-small">📍 Millbrook Proving Ground, Bedf...</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="1" data-category="exhibition" data-region="other" onclick="showEventModal(1)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1161029/13eed5f78da0deab010f6cbb7d817713.webp')"></div><div class="event-content"><span class="date">21 Aug 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Tesla Owners at the British Motor Show 2026</span><span class="location-small">📍 Farnbrorough</span></div></div>
+        <div class="featured-event exhibition" data-event-idx="2" data-category="exhibition" data-region="other" onclick="showEventModal(2)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1162351/0cf6ed09cca63238b266c1672fee021c.jpeg')"></div><div class="event-content"><span class="date">11 Sep 2026</span><span class="category-badge exhibition">🎪 Exhibition</span><span class="title">Everything Electric Greater London</span><span class="location-small">📍 Allianz Stadium</span></div></div>
+        <div class="featured-event meetup" data-event-idx="3" data-category="meetup" data-region="other" onclick="showEventModal(3)"><div class="event-banner" style="background-image: url('https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1137783/79002ad586a9b59826b63474da581323.jpg')"></div><div class="event-content"><span class="date">19 Oct 2026</span><span class="category-badge meetup">🤝 Meetup</span><span class="title">Tesla Gigafactory Berlin Tour 2026</span><span class="location-small">📍 Tesla Gigafactory Berlin-Brand...</span></div></div>
       </div>
     </section>
 
@@ -778,7 +242,7 @@
       <p class="howto-intro">Choose your calendar app to see instructions:</p>
 
       <div class="accordion-group">
-        <button class="accordion-button" onclick="toggleAccordion('google')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-google" onclick="toggleAccordion('google')" aria-expanded="false">
           <span class="accordion-icon">📅</span>
           <span class="accordion-title">Google Calendar</span>
           <span class="accordion-chevron">▼</span>
@@ -794,7 +258,7 @@
           <p class="note">💡 Tip: On Android, the subscribe button will open Google Calendar automatically</p>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('apple')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-apple" onclick="toggleAccordion('apple')" aria-expanded="false">
           <span class="accordion-icon">🍎</span>
           <span class="accordion-title">Apple Calendar (iPhone/iPad/Mac)</span>
           <span class="accordion-chevron">▼</span>
@@ -812,7 +276,7 @@
           </ol>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('outlook')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-outlook" onclick="toggleAccordion('outlook')" aria-expanded="false">
           <span class="accordion-icon">📧</span>
           <span class="accordion-title">Outlook</span>
           <span class="accordion-chevron">▼</span>
@@ -827,7 +291,7 @@
           </ol>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('other')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-other" onclick="toggleAccordion('other')" aria-expanded="false">
           <span class="accordion-icon">🗓️</span>
           <span class="accordion-title">Other Calendar Apps</span>
           <span class="accordion-chevron">▼</span>
@@ -881,270 +345,6 @@
     </div>
   </div>
 
-  <script>
-  // Event data
-  const eventsData = [{"title": "Everything Electric West", "date": "12 Jun 2026", "time": "00:00", "startIso": "2026-06-12T00:00:00+01:00", "location": "Cheltenham Racecourse", "description": "Everything Electric's next show is at the new West of England venue of Cheltenham Racecourse on 12 and 13 June. We will again have a club presence so do pop by and have a chat with our club volunteers", "url": "https://ti.to/teslaownersuk/everything-electric-west", "upcoming": true, "category": "exhibition", "region": "midlands", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157350/0cf6ed09cca63238b266c1672fee021c.jpeg"}, {"title": "Supercharged 2026", "date": "27 Jun 2026", "time": "10:00", "startIso": "2026-06-27T10:00:00+01:00", "location": "Millbrook Proving Ground, Bedfordshire", "description": "The 2026 edition of the Tesla Owners UK national member event will be bigger and better, with more driving opportunities and a new location to enjoy. This new exciting location will host our Superchar", "url": "https://ti.to/teslaownersuk/supercharged-2026", "upcoming": true, "category": "track-day", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1157347/610ecd58c48ef40bc859ff5a59324102.jpg"}, {"title": "Tesla Owners at the British Motor Show 2026", "date": "21 Aug 2026", "time": "00:00", "startIso": "2026-08-21T00:00:00+01:00", "location": "Farnbrorough", "description": "Tesla Owners UK is delighted to have been invited to have a club stand at the British Motor Show at the Farnborough airport exhibition centre (where previous everything electric shows have been held).", "url": "https://ti.to/teslaownersuk/tesla-owners-at-the-british-motor-show-2026", "upcoming": true, "category": "exhibition", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1161029/13eed5f78da0deab010f6cbb7d817713.webp"}, {"title": "Everything Electric Greater London", "date": "11 Sep 2026", "time": "09:00", "startIso": "2026-09-11T09:00:00+01:00", "location": "Allianz Stadium", "description": "Everything Electric's last UK show of 2026 is at the new London venue of the Allianz Stadium. For our paid supporters, please log into your TOUK account after the summer to obtain your free ticket wor", "url": "https://ti.to/teslaownersuk/everything-electric-west-copy", "upcoming": true, "category": "exhibition", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1162351/0cf6ed09cca63238b266c1672fee021c.jpeg"}, {"title": "Tesla Gigafactory Berlin Tour 2026", "date": "19 Oct 2026", "time": "11:30", "startIso": "2026-10-19T11:30:00+01:00", "location": "Tesla Gigafactory Berlin-Brandenburg", "description": "Tesla has invited the official owners club of the United Kingdom to a private tour of their Gigafactory Berlin-Brandenburg for 2026. We meet in Berlin on Sunday 18 October for our club reception and d", "url": "https://ti.to/teslaownersuk/tesla-gigafactory-berlin-tour-2026", "upcoming": true, "category": "meetup", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1137783/79002ad586a9b59826b63474da581323.jpg"}];
-
-  // Dark mode toggle
-  function toggleTheme() {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  }
-
-  // Load saved theme
-  (function() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  })();
-
-  // Next upcoming start: from embedded eventsData so the counter rolls forward without redeploy.
-  const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-  function nextUpcomingStartIso() {
-    const now = Date.now();
-    let best = null;
-    let bestT = Infinity;
-    for (const ev of eventsData) {
-      if (!ev.upcoming || !ev.startIso) continue;
-      const t = new Date(ev.startIso).getTime();
-      if (Number.isNaN(t) || t < now) continue;
-      if (t < bestT) { bestT = t; best = ev.startIso; }
-    }
-    return best;
-  }
-
-  function updateDaysUntil() {
-    const element = document.getElementById('daysUntilNext');
-    if (!element) return;
-
-    const nextIso = nextUpcomingStartIso();
-    if (!nextIso) {
-      element.textContent = '-';
-      element.removeAttribute('data-next-event-date');
-      return;
-    }
-    element.setAttribute('data-next-event-date', nextIso);
-
-    const eventTime = new Date(nextIso).getTime();
-    if (Number.isNaN(eventTime)) {
-      element.textContent = '-';
-      return;
-    }
-
-    const diffMs = eventTime - Date.now();
-    const diffDays = Math.floor(diffMs / MS_PER_DAY);
-
-    if (diffDays >= 0) {
-      element.textContent = String(diffDays);
-    } else {
-      element.textContent = '-';
-    }
-  }
-
-  updateDaysUntil();
-  setInterval(updateDaysUntil, 60 * 1000);
-  document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'visible') updateDaysUntil();
-  });
-
-  // Update "Last updated" timestamp dynamically
-  function updateHealthTimestamp() {
-    const element = document.getElementById('healthTimestamp');
-    if (!element) return;
-
-    const timestamp = element.getAttribute('data-timestamp');
-    if (!timestamp) return;
-
-    const updateTime = new Date(timestamp);
-    const now = new Date();
-    const diffSeconds = Math.floor((now - updateTime) / 1000);
-
-    let timeAgo;
-    if (diffSeconds < 60) {
-      timeAgo = 'just now';
-    } else if (diffSeconds < 3600) {
-      const mins = Math.floor(diffSeconds / 60);
-      timeAgo = `${mins} minute${mins > 1 ? 's' : ''} ago`;
-    } else if (diffSeconds < 86400) {
-      const hours = Math.floor(diffSeconds / 3600);
-      timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else {
-      const days = Math.floor(diffSeconds / 86400);
-      timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
-    }
-
-    element.textContent = timeAgo;
-  }
-
-  // Update health timestamp on page load and every minute
-  updateHealthTimestamp();
-  setInterval(updateHealthTimestamp, 1000 * 60); // Update every minute
-
-  // Filter state
-  let activeCategory = 'all';
-  let activeRegion = 'all';
-
-  // Filter events
-  function filterEvents() {
-    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    const eventCards = document.querySelectorAll('.featured-event');
-    let visibleCount = 0;
-
-    eventCards.forEach((card, idx) => {
-      const event = eventsData[idx];
-      const matchesSearch = !searchTerm ||
-        event.title.toLowerCase().includes(searchTerm) ||
-        event.location.toLowerCase().includes(searchTerm) ||
-        event.description.toLowerCase().includes(searchTerm);
-
-      const matchesCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
-      const matchesRegion = activeRegion === 'all' || card.dataset.region === activeRegion;
-
-      if (matchesSearch && matchesCategory && matchesRegion) {
-        card.classList.remove('hidden');
-        visibleCount++;
-      } else {
-        card.classList.add('hidden');
-      }
-    });
-
-    // Update count
-    const countSpan = document.getElementById('eventCount');
-    if (searchTerm || activeCategory !== 'all' || activeRegion !== 'all') {
-      countSpan.textContent = `({visibleCount} shown)`;
-    } else {
-      countSpan.textContent = '';
-    }
-  }
-
-  // Show event modal
-  function showEventModal(idx) {
-    const event = eventsData[idx];
-    document.getElementById('modalTitle').textContent = event.title;
-    document.getElementById('modalDate').textContent = event.date;
-    document.getElementById('modalTime').textContent = event.time || 'TBA';
-    document.getElementById('modalLocation').textContent = event.location || 'TBA';
-    document.getElementById('modalDescription').textContent = event.description || 'No description available.';
-    document.getElementById('modalLink').href = event.url || '#';
-
-    if (!event.url) {
-      document.getElementById('modalLink').style.display = 'none';
-    } else {
-      document.getElementById('modalLink').style.display = 'inline-block';
-    }
-
-    document.getElementById('eventModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  // Close modal
-  function closeModal() {
-    document.getElementById('eventModal').classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  // Escape key closes modal
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
-  });
-
-  // Accordion toggle
-  function toggleAccordion(id) {
-    const button = event.currentTarget;
-    const content = document.getElementById('accordion-' + id);
-    const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-    // Close all accordions
-    document.querySelectorAll('.accordion-button').forEach(btn => {
-      btn.setAttribute('aria-expanded', 'false');
-    });
-    document.querySelectorAll('.accordion-content').forEach(content => {
-      content.classList.remove('active');
-    });
-
-    // Toggle current
-    if (!isExpanded) {
-      button.setAttribute('aria-expanded', 'true');
-      content.classList.add('active');
-    }
-  }
-
-  // Copy calendar URL to clipboard
-  function copyCalendarURL() {
-    const calendarURL = new URL('tocuk.ics', window.location.href).href;
-    navigator.clipboard.writeText(calendarURL).then(() => {
-      const btn = event.currentTarget;
-      const originalText = btn.textContent;
-      btn.textContent = '✓ Copied!';
-      btn.style.background = 'rgba(34, 197, 94, 0.2)';
-      btn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.style.background = '';
-        btn.style.borderColor = '';
-      }, 2000);
-    }).catch(err => {
-      console.error('Failed to copy:', err);
-      alert('Failed to copy URL. Please copy manually: ' + calendarURL);
-    });
-  }
-
-  // Filter by category
-  function filterByCategory(category) {
-    activeCategory = category;
-
-    // Update chip styles
-    document.querySelectorAll('.filter-chip[data-category]').forEach(chip => {
-      if (chip.dataset.category === category) {
-        chip.classList.add('active');
-      } else {
-        chip.classList.remove('active');
-      }
-    });
-
-    filterEvents();
-  }
-
-  // Filter by region
-  function filterByRegion(region) {
-    activeRegion = region;
-
-    // Update chip styles
-    document.querySelectorAll('.filter-chip[data-region]').forEach(chip => {
-      if (chip.dataset.region === region) {
-        chip.classList.add('active');
-      } else {
-        chip.classList.remove('active');
-      }
-    });
-
-    filterEvents();
-  }
-
-  // Device-specific calendar link handling
-  (function() {
-    var ua = navigator.userAgent || '';
-    var isIOS = /iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    var isMac = /Macintosh|Mac OS X/.test(ua) && !isIOS;
-    var isAndroid = /Android/.test(ua);
-
-    document.querySelectorAll('a[href$=".ics"]').forEach(function(link) {
-      var href = link.getAttribute('href');
-      if (!href) return;
-      var abs = new URL(href, window.location.href).href;
-
-      if (isIOS || isMac) {
-        // Use webcal:// protocol for Apple devices
-        link.href = abs.replace(/^https?:\/\//, 'webcal://');
-      } else if (isAndroid) {
-        // Use Google Calendar render URL for Android
-        link.href = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(abs);
-      }
-    });
-  })();
-  </script>
-</body>
+    <script src="script.js" defer></script>
+  </body>
 </html>
