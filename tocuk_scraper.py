@@ -30,7 +30,6 @@ _PAGE_CSS = """\
       --text: #e2e8f0;
       --text-muted: #94a3b8;
       --cyan: #00d4ff;
-      --red: #e53935;
       --accent: #00d4ff;
       --accent-dim: rgba(0,212,255,0.15);
       --radius: 16px;
@@ -666,7 +665,7 @@ _PAGE_JS = """\
     // Update count
     const countSpan = document.getElementById('eventCount');
     if (searchTerm || activeCategory !== 'all' || activeRegion !== 'all') {
-      countSpan.textContent = `({visibleCount} shown)`;
+      countSpan.textContent = '(' + visibleCount + ' shown)';
     } else {
       countSpan.textContent = '';
     }
@@ -705,7 +704,7 @@ _PAGE_JS = """\
 
   // Accordion toggle
   function toggleAccordion(id) {
-    const button = event.currentTarget;
+    const button = document.getElementById('accordion-btn-' + id);
     const content = document.getElementById('accordion-' + id);
     const isExpanded = button.getAttribute('aria-expanded') === 'true';
 
@@ -726,7 +725,7 @@ _PAGE_JS = """\
 
   // Copy calendar URL to clipboard
   function copyCalendarURL() {
-    const calendarURL = new URL('{ics_url}', window.location.href).href;
+    const calendarURL = new URL('/tocuk.ics', window.location.href).href;
     navigator.clipboard.writeText(calendarURL).then(() => {
       const btn = event.currentTarget;
       const originalText = btn.textContent;
@@ -801,7 +800,7 @@ _PAGE_JS = """\
 
 def write_asset_files(out_dir, events_json_data=None):
     """Write external CSS and JS files for browser caching."""
-    p = __import__('pathlib').Path(out_dir)
+    p = Path(out_dir)
     p.mkdir(parents=True, exist_ok=True)
     (p / "style.css").write_text(_PAGE_CSS, encoding="utf-8")
     (p / "script.js").write_text(_PAGE_JS.replace("{json.dumps(events_json_data)}", json.dumps(events_json_data or [])), encoding="utf-8")
@@ -912,7 +911,7 @@ def fetch_with_retries(
             time.sleep(delay)
             delay *= HTTP_RETRY_MULTIPLIER
 
-    raise requests.RequestException("All retries exhausted")
+    raise RuntimeError("BUG: retry loop exited unexpectedly")  # unreachable
 
 
 def validate_tito_list_row(row: Dict[str, Any]) -> bool:
@@ -2046,11 +2045,11 @@ def get_event_region(event: Dict[str, Any]) -> str:
         return "international"
 
     # Northern England/Scotland
-    if any(place in location for place in ["yorkshire", "north", "newcastle", "leeds", "manchester", "liverpool", "scotland", "durham", "sedgefield", "hardwick"]):
+    if any(re.search(r'\b' + re.escape(place) + r'\b', location) for place in ["yorkshire", "north east", "north west", "north", "newcastle", "leeds", "manchester", "liverpool", "scotland", "durham", "sedgefield", "hardwick"]):
         return "north"
 
     # Southern England
-    if any(place in location for place in ["london", "south", "brighton", "southampton", "kent", "surrey", "farnborough"]):
+    if any(re.search(r'\b' + re.escape(place) + r'\b', location) for place in ["london", "south east", "south west", "south", "brighton", "southampton", "kent", "surrey", "farnborough"]):
         return "south"
 
     # Midlands
@@ -2335,7 +2334,7 @@ def build_index_html(
 
             # Enhanced event card with optional banner image
             banner_html = ""
-            if banner_url and banner_url.startswith("http"):
+            if banner_url and banner_url.startswith("https://"):
                 safe_bg = str(banner_url).replace("'", "%27").replace('"', "%22").replace("(", "%28").replace(")", "%29").replace("\\", "%5C")
                 banner_html = (
                     f'<div class="event-banner" style="background-image: url(\'{safe_bg}\')"></div>'
@@ -2356,6 +2355,8 @@ def build_index_html(
             )
         featured_html = "\n        ".join(featured_items)
 
+    # events_json_data is returned alongside HTML for write_asset_files
+    build_index_html._events_json_data = events_json_data
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2486,7 +2487,7 @@ def build_index_html(
       <p class="howto-intro">Choose your calendar app to see instructions:</p>
 
       <div class="accordion-group">
-        <button class="accordion-button" onclick="toggleAccordion('google')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-google" onclick="toggleAccordion('google')" aria-expanded="false">
           <span class="accordion-icon">📅</span>
           <span class="accordion-title">Google Calendar</span>
           <span class="accordion-chevron">▼</span>
@@ -2502,7 +2503,7 @@ def build_index_html(
           <p class="note">💡 Tip: On Android, the subscribe button will open Google Calendar automatically</p>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('apple')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-apple" onclick="toggleAccordion('apple')" aria-expanded="false">
           <span class="accordion-icon">🍎</span>
           <span class="accordion-title">Apple Calendar (iPhone/iPad/Mac)</span>
           <span class="accordion-chevron">▼</span>
@@ -2520,7 +2521,7 @@ def build_index_html(
           </ol>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('outlook')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-outlook" onclick="toggleAccordion('outlook')" aria-expanded="false">
           <span class="accordion-icon">📧</span>
           <span class="accordion-title">Outlook</span>
           <span class="accordion-chevron">▼</span>
@@ -2535,7 +2536,7 @@ def build_index_html(
           </ol>
         </div>
 
-        <button class="accordion-button" onclick="toggleAccordion('other')" aria-expanded="false">
+        <button class="accordion-button" id="accordion-btn-other" onclick="toggleAccordion('other')" aria-expanded="false">
           <span class="accordion-icon">🗓️</span>
           <span class="accordion-title">Other Calendar Apps</span>
           <span class="accordion-chevron">▼</span>
@@ -2589,8 +2590,8 @@ def build_index_html(
     </div>
   </div>
 
-  <script src="script.js" defer></script>
-</body>
+    <script src="script.js" defer></script>
+  </body>
 </html>"""
 
 
@@ -2892,6 +2893,7 @@ def main() -> None:
     new_seq_state: Dict[str, Dict[str, Any]] = {}
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     event_lines = []
+    _event_ics_cache: Dict[str, str] = {}
     for event in enriched_events:
         start = parse_iso_datetime(event.get("start_at"))
         is_past = False
@@ -2929,6 +2931,7 @@ def main() -> None:
         ical = make_ics_event(event, sequence=seq_n, dtstamp_utc=dts_utc)
         if ical:
             event_lines.append(ical)
+            _event_ics_cache[slug] = ical
 
     save_ical_sequence_state(new_seq_state)
 
@@ -2950,14 +2953,13 @@ def main() -> None:
     tmp_path.replace(ics_path)
     logger.info("Wrote %s (%d events)", ics_path, len(event_lines))
 
-    # Region-filtered ICS feeds (#22)
+    # Region-filtered ICS feeds (reuse cached ICS from main loop)
     region_events: Dict[str, list] = {}
     for i, event in enumerate(upcoming_enriched):
         region = get_event_region(event)
-        ical = make_ics_event(event, sequence=int(new_seq_state.get(str(event.get("slug") or ""), {}).get("seq", 0)),
-                              dtstamp_utc=_parse_ical_z_datetime(str(new_seq_state.get(str(event.get("slug") or ""), {}).get("dtstamp", ""))) or now_utc)
-        if ical:
-            region_events.setdefault(region, []).append(ical)
+        slug_str = str(event.get("slug") or "")
+        if slug_str in _event_ics_cache:
+            region_events.setdefault(region, []).append(_event_ics_cache[slug_str])
     for region, lines in region_events.items():
         if region in ("unknown", "tbc", "other"):
             continue
@@ -2988,17 +2990,15 @@ def main() -> None:
 
     # Generate index with health status
     health_status = load_health_status()
-    write_asset_files(OUTPUT_DIR, events_json_data)
-    index_path = Path(OUTPUT_DIR) / "index.html"
-    index_path.write_text(
-        build_index_html(
-            enriched_events,
-            upcoming_count=len(upcoming_enriched),
-            health_status=health_status,
-            site_public_url=SITE_PUBLIC_URL,
-        ),
-        encoding="utf-8",
+    index_html = build_index_html(
+        enriched_events,
+        upcoming_count=len(upcoming_enriched),
+        health_status=health_status,
+        site_public_url=SITE_PUBLIC_URL,
     )
+    write_asset_files(OUTPUT_DIR, getattr(build_index_html, '_events_json_data', []))
+    index_path = Path(OUTPUT_DIR) / "index.html"
+    index_path.write_text(index_html, encoding="utf-8")
     logger.info("Wrote %s", index_path)
 
     write_seo_files(SITE_PUBLIC_URL)

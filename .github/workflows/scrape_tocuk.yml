@@ -47,7 +47,9 @@ jobs:
         run: uv pip install -r requirements.txt
 
       - name: Run scraper (with retries)
+        shell: bash
         run: |
+          set -o pipefail
           mkdir -p logs
           ATTEMPTS="${SCRAPER_RUN_ATTEMPTS:-2}"
           if [ "$ATTEMPTS" -lt 1 ]; then ATTEMPTS=1; fi
