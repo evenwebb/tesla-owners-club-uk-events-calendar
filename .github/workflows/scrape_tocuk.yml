@@ -26,11 +26,11 @@ jobs:
       SCRAPER_RUN_ATTEMPTS: ${{ vars.SCRAPER_RUN_ATTEMPTS || '2' }}
       CALENDAR_SITE_URL: ${{ vars.CALENDAR_SITE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload failure logs artifact
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: scraper-failure-logs-${{ github.run_id }}
           retention-days: 7
