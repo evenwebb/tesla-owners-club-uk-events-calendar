@@ -6,7 +6,7 @@ X-WR-CALNAME:Tesla Owners UK Events
 X-WR-CALDESC:Upcoming events from Tesla Owners UK
 BEGIN:VEVENT
 UID:vhrwsQ@checkout.tito.io
-DTSTAMP:20260906T123555Z
+DTSTAMP:20260907T144551Z
 SEQUENCE:0
 DTSTART:20260911T080000Z
 DTEND:20260912T150000Z
@@ -16,8 +16,8 @@ DESCRIPTION:Everything Electric's last UK show of 2026 is at the new London
  our TOUK account after the summer to obtain your free ticket worth £15\n\n
  Listing: September 11th–12th\, 2026\n\nWall clock / source TZ: Europe/Lond
  on\n\nEvent & tickets (Ti.to): https://ti.to/teslaownersuk/everything-elec
- tric-west-copy\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-09-06T12:35
- :54+00:00\n\nTesla Owners UK: https://ti.to/teslaownersuk\n\nClub site: ht
+ tric-west-copy\n\nSource list: upcoming\n\nTi.to DTSTAMP: 2026-09-07T14:45
+ :49+00:00\n\nTesla Owners UK: https://ti.to/teslaownersuk\n\nClub site: ht
  tps://teslaowners.uk/
 CREATED:20260527T132633Z
 LAST-MODIFIED:20260823T190202Z
@@ -40,7 +40,7 @@ X-TITO-SLUG:everything-electric-west-copy
 END:VEVENT
 BEGIN:VEVENT
 UID:I8tikA@checkout.tito.io
-DTSTAMP:20260906T123555Z
+DTSTAMP:20260907T144551Z
 SEQUENCE:0
 DTSTART:20261018T170000Z
 DTEND:20261019T133000Z
@@ -56,7 +56,7 @@ DESCRIPTION:Tesla has invited the official owners club of the United Kingdo
  visit for TOUK members.\n\nListing: October 18th–19th\, 2026\n\nWall clock
   / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to/tesl
  aownersuk/tesla-gigafactory-berlin-tour-2026-copy\n\nSource list: upcoming
- \n\nTi.to DTSTAMP: 2026-09-06T12:35:55+00:00\n\nTesla Owners UK: https://t
+ \n\nTi.to DTSTAMP: 2026-09-07T14:45:50+00:00\n\nTesla Owners UK: https://t
  i.to/teslaownersuk\n\nClub site: https://teslaowners.uk/
 CREATED:20260614T231944Z
 LAST-MODIFIED:20260616T115149Z
@@ -76,5 +76,38 @@ ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/ban
 RESOURCES:Tesla Gigafactory Berlin-Brandenburg
 X-TIMEZONE:Europe/London
 X-TITO-SLUG:tesla-gigafactory-berlin-tour-2026-copy
+END:VEVENT
+BEGIN:VEVENT
+UID:dkJftQ@checkout.tito.io
+DTSTAMP:20260907T144551Z
+SEQUENCE:0
+DTSTART:20261211T150000Z
+DTEND:20261211T190000Z
+SUMMARY:Christmas Light Show
+DESCRIPTION:Save the date! We are planning our second ever Tesla Owners UK 
+ Christmas Light Show with Xlightshows. You will not want to miss this! Det
+ ails and tickets will be launched soon.\n\nListing: December 11th\, 2026\n
+ \nWall clock / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https:
+ //ti.to/teslaownersuk/christmas-light-show\n\nSource list: upcoming\n\nTi.
+ to DTSTAMP: 2026-09-07T14:45:51+00:00\n\nTesla Owners UK: https://ti.to/te
+ slaownersuk\n\nClub site: https://teslaowners.uk/
+CREATED:20260906T230220Z
+LAST-MODIFIED:20260906T230642Z
+LOCATION:Silverstone TBC
+URL:https://ti.to/teslaownersuk/christmas-light-show
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: Europe/London
+COMMENT:Date: December 11th\, 2026
+COMMENT:Ti.to listing: December 11th\, 2026
+COMMENT:Ti.to bucket: upcoming
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1165336/12ed4d0d43aa00b593dfe48df315279a.png
+RESOURCES:Silverstone TBC
+X-TIMEZONE:Europe/London
+X-TITO-SLUG:christmas-light-show
 END:VEVENT
 END:VCALENDAR
