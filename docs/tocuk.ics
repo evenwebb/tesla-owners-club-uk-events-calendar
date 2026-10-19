@@ -5,47 +5,8 @@ CALSCALE:GREGORIAN
 X-WR-CALNAME:Tesla Owners UK Events
 X-WR-CALDESC:Upcoming events from Tesla Owners UK
 BEGIN:VEVENT
-UID:I8tikA@checkout.tito.io
-DTSTAMP:20261018T125751Z
-SEQUENCE:0
-DTSTART:20261018T170000Z
-DTEND:20261019T133000Z
-SUMMARY:Tesla Gigafactory Berlin Tour 2026
-DESCRIPTION:Tesla has invited the official owners club of the United Kingdo
- m to a private tour of their Gigafactory Berlin-Brandenburg for 2026. We m
- eet in Berlin on Sunday 18 October for our club reception and dinner\, and
-  the have the factory tour in the morning of Monday 19 October. This makes
-  it flexible for a long weekend visit or tagging onto a longer road trip. 
- Please note that registration has now closed for 2026 and we will be conta
- cting members shortly if they have been successful in receiving a ticket i
- n the member ballot. Over 18s only. No press or media\; this is a special 
- visit for TOUK members.\n\nListing: October 18th–19th\, 2026\n\nWall clock
-  / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to/tesl
- aownersuk/tesla-gigafactory-berlin-tour-2026-copy\n\nSource list: upcoming
- \n\nTi.to DTSTAMP: 2026-10-18T12:57:50+00:00\n\nTesla Owners UK: https://t
- i.to/teslaownersuk\n\nClub site: https://teslaowners.uk/
-CREATED:20260614T231944Z
-LAST-MODIFIED:20260616T115149Z
-LOCATION:Tesla Gigafactory Berlin-Brandenburg
-URL:https://ti.to/teslaownersuk/tesla-gigafactory-berlin-tour-2026-copy
-ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
-CONTACT:mailto:president@teslaowners.org.uk
-COMMENT:Timezone: Europe/London
-COMMENT:Date: October 18th–19th\, 2026
-COMMENT:Ti.to listing: October 18th–19th\, 2026
-COMMENT:Ti.to bucket: upcoming
-CATEGORIES:Tesla Owners UK,Event
-CLASS:PUBLIC
-TRANSP:OPAQUE
-STATUS:CONFIRMED
-ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1162895/79667aa3fd4d76fb06cdd0f67e3a97d1.jpeg
-RESOURCES:Tesla Gigafactory Berlin-Brandenburg
-X-TIMEZONE:Europe/London
-X-TITO-SLUG:tesla-gigafactory-berlin-tour-2026-copy
-END:VEVENT
-BEGIN:VEVENT
 UID:dkJftQ@checkout.tito.io
-DTSTAMP:20261018T125751Z
+DTSTAMP:20261019T161056Z
 SEQUENCE:0
 DTSTART:20261211T150000Z
 DTEND:20261211T190000Z
@@ -55,10 +16,10 @@ DESCRIPTION:Save the date! We are planning our second ever Tesla Owners UK
  ails and tickets will be launched soon.\n\nListing: December 11th\, 2026\n
  \nWall clock / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https:
  //ti.to/teslaownersuk/christmas-light-show\n\nSource list: upcoming\n\nTi.
- to DTSTAMP: 2026-10-18T12:57:51+00:00\n\nTesla Owners UK: https://ti.to/te
+ to DTSTAMP: 2026-10-19T16:10:56+00:00\n\nTesla Owners UK: https://ti.to/te
  slaownersuk\n\nClub site: https://teslaowners.uk/
 CREATED:20260906T230220Z
-LAST-MODIFIED:20260906T230642Z
+LAST-MODIFIED:20261019T141837Z
 LOCATION:Silverstone TBC
 URL:https://ti.to/teslaownersuk/christmas-light-show
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
