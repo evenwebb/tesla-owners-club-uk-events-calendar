@@ -6,21 +6,24 @@ X-WR-CALNAME:Tesla Owners UK Events
 X-WR-CALDESC:Upcoming events from Tesla Owners UK
 BEGIN:VEVENT
 UID:dkJftQ@checkout.tito.io
-DTSTAMP:20261022T141940Z
-SEQUENCE:0
-DTSTART:20261211T150000Z
-DTEND:20261211T190000Z
+DTSTAMP:20261023T140256Z
+SEQUENCE:1
+DTSTART:20261211T140000Z
+DTEND:20261211T193000Z
 SUMMARY:Christmas Light Show
-DESCRIPTION:Save the date! We are planning our second ever Tesla Owners UK 
- Christmas Light Show with Xlightshows. You will not want to miss this! Det
- ails and tickets will be launched soon.\n\nListing: December 11th\, 2026\n
- \nWall clock / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https:
- //ti.to/teslaownersuk/christmas-light-show\n\nSource list: upcoming\n\nTi.
- to DTSTAMP: 2026-10-22T14:19:40+00:00\n\nTesla Owners UK: https://ti.to/te
- slaownersuk\n\nClub site: https://teslaowners.uk/
+DESCRIPTION:Our second ever Tesla Owners UK Christmas Light Show with Xligh
+ tshows will be in the early evening of Friday 11 December. You will not wa
+ nt to miss this! We open from 2pm\, and you can arrive up to 5pm to get yo
+ ur car into the display and enjoy not just our Tesla Christmas Light Show\
+ , but also enjoy the opening day of the Silvertstone Lap of Lights and var
+ ious family friendly activities.\n\nListing: December 11th\, 2026\n\nWall 
+ clock / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to
+ /teslaownersuk/christmas-light-show\n\nSource list: upcoming\n\nTi.to DTST
+ AMP: 2026-10-23T14:02:56+00:00\n\nTesla Owners UK: https://ti.to/teslaowne
+ rsuk\n\nClub site: https://teslaowners.uk/
 CREATED:20260906T230220Z
-LAST-MODIFIED:20261019T141837Z
-LOCATION:Silverstone TBC
+LAST-MODIFIED:20261022T150351Z
+LOCATION:Silverstone Circuit
 URL:https://ti.to/teslaownersuk/christmas-light-show
 ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
 CONTACT:mailto:president@teslaowners.org.uk
@@ -33,7 +36,7 @@ CLASS:PUBLIC
 TRANSP:OPAQUE
 STATUS:CONFIRMED
 ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1165336/12ed4d0d43aa00b593dfe48df315279a.png
-RESOURCES:Silverstone TBC
+RESOURCES:Silverstone Circuit
 X-TIMEZONE:Europe/London
 X-TITO-SLUG:christmas-light-show
 END:VEVENT

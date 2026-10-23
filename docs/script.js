@@ -1,5 +1,5 @@
   // Event data
-  const eventsData = [{"title": "Christmas Light Show", "date": "11 Dec 2026", "time": "15:00", "startIso": "2026-12-11T15:00:00+00:00", "location": "Silverstone TBC", "description": "Save the date! We are planning our second ever Tesla Owners UK Christmas Light Show with Xlightshows. You will not want to miss this! Details and tickets will be launched soon.", "url": "https://ti.to/teslaownersuk/christmas-light-show", "upcoming": true, "category": "exhibition", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1165336/12ed4d0d43aa00b593dfe48df315279a.png"}];
+  const eventsData = [{"title": "Christmas Light Show", "date": "11 Dec 2026", "time": "14:00", "startIso": "2026-12-11T14:00:00+00:00", "location": "Silverstone Circuit", "description": "Our second ever Tesla Owners UK Christmas Light Show with Xlightshows will be in the early evening of Friday 11 December. You will not want to miss this! We open from 2pm, and you can arrive up to 5pm", "url": "https://ti.to/teslaownersuk/christmas-light-show", "upcoming": true, "category": "track-day", "region": "other", "banner": "https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1165336/12ed4d0d43aa00b593dfe48df315279a.png"}];
 
   // Dark mode toggle
   function toggleTheme() {
