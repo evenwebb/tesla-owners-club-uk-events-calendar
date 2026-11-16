@@ -14,6 +14,7 @@ concurrency:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   scrape:
@@ -79,6 +80,15 @@ jobs:
           fi
           git commit -m "Update Tesla Owners UK events calendar"
           git push
+
+      # A commit made with GITHUB_TOKEN does not trigger another workflow, so
+      # the Pages deployment has to be asked for explicitly. Without this the
+      # repository updates daily and the published calendar stays at its last
+      # human-pushed version.
+      - name: Deploy the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "${{ github.repository }}"
 
       - name: Upload failure logs artifact
         if: failure()
