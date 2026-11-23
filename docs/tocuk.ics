@@ -6,7 +6,7 @@ X-WR-CALNAME:Tesla Owners UK Events
 X-WR-CALDESC:Upcoming events from Tesla Owners UK
 BEGIN:VEVENT
 UID:dkJftQ@checkout.tito.io
-DTSTAMP:20261122T165243Z
+DTSTAMP:20261123T205115Z
 SEQUENCE:1
 DTSTART:20261211T140000Z
 DTEND:20261211T193000Z
@@ -19,7 +19,7 @@ DESCRIPTION:Our second ever Tesla Owners UK Christmas Light Show with Xligh
  ious family friendly activities.\n\nListing: December 11th\, 2026\n\nWall 
  clock / source TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to
  /teslaownersuk/christmas-light-show\n\nSource list: upcoming\n\nTi.to DTST
- AMP: 2026-11-22T16:52:43+00:00\n\nTesla Owners UK: https://ti.to/teslaowne
+ AMP: 2026-11-23T20:51:14+00:00\n\nTesla Owners UK: https://ti.to/teslaowne
  rsuk\n\nClub site: https://teslaowners.uk/
 CREATED:20260906T230220Z
 LAST-MODIFIED:20261024T124045Z
@@ -39,5 +39,47 @@ ATTACH;FMTTYPE=image/png:https://do3z7e6uuakno.cloudfront.net/uploads/event/bann
 RESOURCES:Silverstone Circuit
 X-TIMEZONE:Europe/London
 X-TITO-SLUG:christmas-light-show
+END:VEVENT
+BEGIN:VEVENT
+UID:9Xzknw@checkout.tito.io
+DTSTAMP:20261123T205115Z
+SEQUENCE:0
+DTSTART:20270723T080000Z
+DTEND:20270725T170000Z
+SUMMARY:TOUK @ Silverstone BRDC Classic
+DESCRIPTION:Save the date! 23-25 July 2027 We have been invited back to Sil
+ verstone for the BRDC Classic in 2027 following our successful display at 
+ the 2025 Silverstone Classic. We will have a special ticket deal for a 1\,
+  2 or 3 days tickets for members that wish to attend the event and show of
+ f their car on the TOUK club stand. Tickets are expected to open in Decemb
+ er and will be managed by Silverstone. Please look out for the TOUK newsle
+ tter once bookings open for our special booking link with a 2-4-1 offer. W
+ e welcome all Tesla cars if they are of concours level cleanliness\, and a
+ lso we will have space for our modified member cars too. If you have a Tes
+ la Roadster\, please do contact TOUK before getting your tickets as we wil
+ l be able to offer a further discount for you if you can attend 2 or the f
+ ull 3 days of the event.\n\nListing: July 23rd–25th\, 2027\n\nWall clock /
+  source TZ: Europe/London\n\nEvent & tickets (Ti.to): https://ti.to/teslao
+ wnersuk/touk-silverstone-brdc-classic\n\nSource list: upcoming\n\nTi.to DT
+ STAMP: 2026-11-23T20:51:15+00:00\n\nTesla Owners UK: https://ti.to/teslaow
+ nersuk\n\nClub site: https://teslaowners.uk/
+CREATED:20261123T112812Z
+LAST-MODIFIED:20261123T123359Z
+LOCATION:Silverstone
+URL:https://ti.to/teslaownersuk/touk-silverstone-brdc-classic
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: Europe/London
+COMMENT:Date: July 23rd–25th\, 2027
+COMMENT:Ti.to listing: July 23rd–25th\, 2027
+COMMENT:Ti.to bucket: upcoming
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1171767/9d879764d8762462437d3054bd2e2466.jpg
+RESOURCES:Silverstone
+X-TIMEZONE:Europe/London
+X-TITO-SLUG:touk-silverstone-brdc-classic
 END:VEVENT
 END:VCALENDAR
