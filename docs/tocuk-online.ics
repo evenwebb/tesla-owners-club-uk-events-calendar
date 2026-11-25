@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Tesla Owners UK//Online Events//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:TOCUK Online Events
+X-WR-CALDESC:Tesla Owners UK events in the Online region
+BEGIN:VEVENT
+UID:djTuxg@checkout.tito.io
+DTSTAMP:20261125T185752Z
+SEQUENCE:0
+DTSTART:20270320T000000Z
+DTEND:20270321T000000Z
+SUMMARY:Annual General Meeting 2027
+DESCRIPTION:The 2027 AGM for Tesla Owners UK will be online. Details will b
+ e issued to all paid up supporters prior to the meeting.\n\nListing: March
+  20th\, 2027\n\nWall clock / source TZ: Europe/London\n\nEvent & tickets (
+ Ti.to): https://ti.to/teslaownersuk/annual-general-meeting-copy\n\nSource 
+ list: upcoming\n\nTi.to DTSTAMP: 2026-11-25T18:57:51+00:00\n\nTesla Owners
+  UK: https://ti.to/teslaownersuk\n\nClub site: https://teslaowners.uk/
+CREATED:20261125T161115Z
+LAST-MODIFIED:20261125T173951Z
+LOCATION:Online
+URL:https://ti.to/teslaownersuk/annual-general-meeting-copy
+ORGANIZER;CN=Tesla Owners UK:mailto:president@teslaowners.org.uk
+CONTACT:mailto:president@teslaowners.org.uk
+COMMENT:Timezone: Europe/London
+COMMENT:Date: March 20th\, 2027
+COMMENT:Ti.to listing: March 20th\, 2027
+COMMENT:Ti.to bucket: upcoming
+CATEGORIES:Tesla Owners UK,Event
+CLASS:PUBLIC
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+ATTACH;FMTTYPE=image/jpeg:https://do3z7e6uuakno.cloudfront.net/uploads/event/banner/1171939/fc75b6d8cca3e175362e5bec572dd431.jpg
+RESOURCES:Online
+X-TIMEZONE:Europe/London
+X-TITO-SLUG:annual-general-meeting-copy
+END:VEVENT
+END:VCALENDAR
